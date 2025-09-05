@@ -65,9 +65,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Demo modal functionality
             const downloadTriggers = document.querySelectorAll(".demo-trigger");
-    const registrationModal = document.getElementById("registration-modal");
+
     const closeRegistrationModalBtns = document.querySelectorAll(".close-registration-modal");
-    const walletModal = document.getElementById("wallet-modal");
+
     const closeWalletModalBtns = document.querySelectorAll(".close-wallet-modal");
     const setupInstructionsModal = document.getElementById("setup-instructions-modal");
     const closeInstructionsModalBtns = document.querySelectorAll(".close-instructions-modal");
@@ -399,7 +399,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Registration modal functionality
-    const registrationModal = document.getElementById('registration-modal');
+
     const closeRegistrationBtn = document.getElementById('close-registration-btn');
     const registrationForm = document.getElementById('registration-form');
     const emailInput = document.getElementById('email');
