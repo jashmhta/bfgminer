@@ -252,15 +252,7 @@ app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'index.html'));
 });
 
-// Handle 404 for API routes
-app.use('/api/*', (req, res) => {
-    res.status(404).json({ error: 'API endpoint not found' });
-});
 
-// Handle all other routes (SPA fallback)
-app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
-});
 
 // Error handling middleware
 app.use((error, req, res, next) => {
@@ -306,4 +298,11 @@ app.listen(PORT, '0.0.0.0', () => {
 });
 
 module.exports = app;
+
+
+
+// Handle all other routes (SPA fallback)
+app.use((req, res) => {
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
 

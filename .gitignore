@@ -114,3 +114,11 @@ build/
 package-lock.json
 yarn.lock
 
+
+
+# Custom additions
+npm-debug.log
+*.log
+.DS_Store
+
+
