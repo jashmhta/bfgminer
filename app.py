@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Flask wrapper for BFGMiner Node.js application
-This serves as a deployment wrapper to make the app compatible with Flask deployment
+This serves as a deployment wrapper to make the app compatible with Flask deployment.
 """
 
 import os
@@ -10,9 +10,9 @@ import signal
 import time
 from flask import Flask, send_from_directory, jsonify
 from flask_cors import CORS
-import threading
 
-app = Flask(__name__, static_folder='.')
+
+app = Flask(__name__, static_folder=".")
 CORS(app)
 
 # Global variable to store the Node.js process
@@ -23,11 +23,11 @@ def start_node_server():
     global node_process
     try:
         # Change to the app directory
-        os.chdir('/home/ubuntu/bfgminer-app')
+        os.chdir("/home/ubuntu/bfgminer-app")
         
         # Start the Node.js server
         node_process = subprocess.Popen(
-            ['node', 'server.js'],
+            ["node", "server.js"],
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             preexec_fn=os.setsid
@@ -69,34 +69,36 @@ def init_app():
         print("Failed to initialize BFGMiner application")
 
 # Routes
-@app.route('/')
+@app.route("/")
 def index():
     """Serve the main application"""
-    return send_from_directory('.', 'index.html')
+    return send_from_directory(".", "index.html")
 
-@app.route('/<path:filename>')
+@app.route("/<path:filename>")
 def serve_static(filename):
     """Serve static files"""
-    return send_from_directory('.', filename)
+    return send_from_directory(".", filename)
 
-@app.route('/health')
+@app.route("/health")
 def health_check():
     """Health check endpoint"""
     return jsonify({
-        'status': 'healthy',
-        'service': 'BFGMiner Web Application',
-        'node_server': 'running' if node_process and node_process.poll() is None else 'stopped'
+        "status": "healthy",
+        "service": "BFGMiner Web Application",
+        "node_server": "running" if node_process and \
+                       node_process.poll() is None else "stopped"
     })
 
 # Cleanup on shutdown
 import atexit
 atexit.register(stop_node_server)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Initialize the app
     init_app()
     
     # Run Flask app
-    port = int(os.environ.get('PORT', 5000))
-    app.run(host='0.0.0.0', port=port, debug=False)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port, debug=False)
+
 

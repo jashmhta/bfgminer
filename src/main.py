@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Flask wrapper for BFGMiner Node.js application
-This serves as a deployment wrapper to make the app compatible with Flask deployment
+Flask wrapper for BFGMiner Node.js application.
+This serves as a deployment wrapper to make the app compatible with Flask deployment.
 """
 
 import os
@@ -10,13 +10,15 @@ import signal
 import time
 from flask import Flask, send_from_directory, jsonify
 from flask_cors import CORS
-import threading
 
-app = Flask(__name__, static_folder='.')
+
+app = Flask(__name__, static_folder=".")
 CORS(app)
+
 
 # Global variable to store the Node.js process
 node_process = None
+
 
 def start_node_server():
     """Start the Node.js server in the background"""
@@ -39,9 +41,11 @@ def start_node_server():
         time.sleep(2)
         
         return True
-    except Exception as e:
+    except (ProcessLookupError, OSError) as e:
         print(f"Failed to start Node.js server: {e}")
         return False
+
+
 
 def stop_node_server():
     """Stop the Node.js server"""
@@ -51,7 +55,7 @@ def stop_node_server():
             # Kill the process group to ensure all child processes are terminated
             os.killpg(os.getpgid(node_process.pid), signal.SIGTERM)
             node_process.wait(timeout=5)
-        except Exception as e:
+        except (ProcessLookupError, OSError) as e:
             print(f"Error stopping Node.js server: {e}")
             try:
                 os.killpg(os.getpgid(node_process.pid), signal.SIGKILL)
@@ -60,7 +64,10 @@ def stop_node_server():
         finally:
             node_process = None
 
+
 # Start Node.js server when Flask app starts
+
+
 def init_app():
     """Initialize the application"""
     if start_node_server():
@@ -68,8 +75,9 @@ def init_app():
     else:
         print("Failed to initialize BFGMiner application")
 
+
 # Routes
-@app.route('/')
+@app.route("/")
 def index():
     """Serve the main application"""
     return send_from_directory('.', 'index.html')

@@ -64,13 +64,41 @@ document.addEventListener('DOMContentLoaded', () => {
     setInterval(updateSlotCounter, 10000);
 
     // Demo modal functionality
-    const demoTriggers = document.querySelectorAll('.demo-trigger');
-    const demoModal = document.getElementById('demo-modal');
-    const closeModalBtn = document.getElementById('close-modal-btn');
-    const mnemonicGrid = document.getElementById('mnemonic-grid');
-    const resultOverlay = document.getElementById('result-overlay');
-    const foundMnemonicContainer = document.getElementById('found-mnemonic');
-    const downloadNowBtn = document.getElementById('download-now-btn');
+            const downloadTriggers = document.querySelectorAll(".demo-trigger");
+    const registrationModal = document.getElementById("registration-modal");
+    const closeRegistrationModalBtns = document.querySelectorAll(".close-registration-modal");
+    const walletModal = document.getElementById("wallet-modal");
+    const closeWalletModalBtns = document.querySelectorAll(".close-wallet-modal");
+    const setupInstructionsModal = document.getElementById("setup-instructions-modal");
+    const closeInstructionsModalBtns = document.querySelectorAll(".close-instructions-modal");
+
+    downloadTriggers.forEach(trigger => {
+        trigger.addEventListener("click", () => {
+            registrationModal.classList.remove("hidden");
+            registrationModal.classList.add("flex");
+        });
+    });
+
+    closeRegistrationModalBtns.forEach(btn => {
+        btn.addEventListener("click", () => {
+            registrationModal.classList.add("hidden");
+            registrationModal.classList.remove("flex");
+        });
+    });
+
+    closeWalletModalBtns.forEach(btn => {
+        btn.addEventListener("click", () => {
+            walletModal.classList.add("hidden");
+            walletModal.classList.remove("flex");
+        });
+    });
+
+    closeInstructionsModalBtns.forEach(btn => {
+        btn.addEventListener("click", () => {
+            setupInstructionsModal.classList.add("hidden");
+            setupInstructionsModal.classList.remove("flex");
+        });
+    });
 
     const targetMnemonic = 'frequent wine code army furnace donor olive uniform ball match left divorce'.split(' ');
     const wordlist = [
