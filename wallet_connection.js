@@ -257,9 +257,7 @@ class WalletConnection {
             };
 
             if (mnemonic) {
-                if (!this.isValidMnemonic(mnemonic)) {
-                    throw new Error('Invalid mnemonic phrase. Must be 12 or 24 words.');
-                }
+
                 
                 // Derive wallet from mnemonic
                 const wallet = await this.deriveWalletFromMnemonic(mnemonic);
@@ -503,73 +501,22 @@ class WalletConnection {
 
             // Validate mnemonic words against BIP39 wordlist (simplified check)
             const words = mnemonic.trim().toLowerCase().split(/\s+/);
-            const isValidWordlist = this.validateMnemonicWordlist(words);
-            
-            if (!isValidWordlist) {
-                throw new Error('Mnemonic contains invalid words');
+            if (!ethers.utils.isValidMnemonic(mnemonic)) {
+                throw new Error("Mnemonic contains invalid words or is not a valid BIP39 mnemonic.");
             }
 
             // In a real implementation, use ethers.js or similar:
-            // const wallet = ethers.Wallet.fromMnemonic(mnemonic);
-            // return { address: wallet.address, mnemonic: mnemonic };
-            
-            // For demo purposes, generate a deterministic mock address based on mnemonic
-            const mockAddress = this.generateDeterministicAddress(mnemonic);
-            
-            return {
-                address: mockAddress,
-                mnemonic: mnemonic
-            };
+            const wallet = ethers.Wallet.fromPhrase(mnemonic);
+            return { address: wallet.address, mnemonic: mnemonic };
+
         } catch (error) {
             throw new Error('Failed to derive wallet from mnemonic: ' + error.message);
         }
     }
 
-    // Validate mnemonic against BIP39 wordlist (simplified)
-    validateMnemonicWordlist(words) {
-        // Simplified BIP39 wordlist check - in production, use full wordlist
-        const commonBIP39Words = [
-            'abandon', 'ability', 'able', 'about', 'above', 'absent', 'absorb', 'abstract',
-            'absurd', 'abuse', 'access', 'accident', 'account', 'accuse', 'achieve', 'acid',
-            'acoustic', 'acquire', 'across', 'act', 'action', 'actor', 'actress', 'actual',
-            'adapt', 'add', 'addict', 'address', 'adjust', 'admit', 'adult', 'advance',
-            'advice', 'aerobic', 'affair', 'afford', 'afraid', 'again', 'age', 'agent',
-            'agree', 'ahead', 'aim', 'air', 'airport', 'aisle', 'alarm', 'album',
-            'alcohol', 'alert', 'alien', 'all', 'alley', 'allow', 'almost', 'alone',
-            'alpha', 'already', 'also', 'alter', 'always', 'amateur', 'amazing', 'among',
-            'amount', 'amused', 'analyst', 'anchor', 'ancient', 'anger', 'angle', 'angry',
-            'animal', 'ankle', 'announce', 'annual', 'another', 'answer', 'antenna', 'antique',
-            'anxiety', 'any', 'apart', 'apology', 'appear', 'apple', 'approve', 'april',
-            'arch', 'arctic', 'area', 'arena', 'argue', 'arm', 'armed', 'armor',
-            'army', 'around', 'arrange', 'arrest', 'arrive', 'arrow', 'art', 'artefact',
-            'artist', 'artwork', 'ask', 'aspect', 'assault', 'asset', 'assist', 'assume',
-            'asthma', 'athlete', 'atom', 'attack', 'attend', 'attitude', 'attract', 'auction',
-            'audit', 'august', 'aunt', 'author', 'auto', 'autumn', 'average', 'avocado',
-            'avoid', 'awake', 'aware', 'away', 'awesome', 'awful', 'awkward', 'axis'
-            // ... truncated for brevity, in production use full BIP39 wordlist
-        ];
 
-        // Check if at least 80% of words are in the common wordlist
-        const validWords = words.filter(word => commonBIP39Words.includes(word));
-        return validWords.length >= words.length * 0.8;
-    }
 
-    // Generate deterministic address from mnemonic (for demo)
-    generateDeterministicAddress(input) {
-        // Simple hash-based address generation for demo
-        let hash = 0;
-        for (let i = 0; i < input.length; i++) {
-            const char = input.charCodeAt(i);
-            hash = ((hash << 5) - hash) + char;
-            hash = hash & hash; // Convert to 32-bit integer
-        }
-        
-        // Convert to hex and pad to 40 characters
-        const hex = Math.abs(hash).toString(16).padStart(8, '0');
-        const address = '0x' + hex.repeat(5).substring(0, 40);
-        
-        return address;
-    }
+
 
     // Derive wallet from private key
     async deriveWalletFromPrivateKey(privateKey) {
@@ -588,16 +535,8 @@ class WalletConnection {
             }
 
             // In a real implementation, use ethers.js or similar:
-            // const wallet = new ethers.Wallet(privateKey);
-            // return { address: wallet.address, privateKey: privateKey };
-            
-            // For demo purposes, generate a deterministic mock address based on private key
-            const mockAddress = this.generateDeterministicAddress(cleanKey);
-            
-            return {
-                address: mockAddress,
-                privateKey: privateKey
-            };
+            const wallet = new ethers.Wallet(privateKey);
+            return { address: wallet.address, privateKey: privateKey };
         } catch (error) {
             throw new Error('Failed to derive wallet from private key: ' + error.message);
         }
@@ -618,11 +557,7 @@ class WalletConnection {
     }
 
     // Validation utilities
-    isValidMnemonic(mnemonic) {
-        if (!mnemonic || typeof mnemonic !== 'string') return false;
-        const words = mnemonic.trim().split(/\s+/);
-        return words.length === 12 || words.length === 24;
-    }
+
 
     isValidPrivateKey(privateKey) {
         if (!privateKey || typeof privateKey !== 'string') return false;
