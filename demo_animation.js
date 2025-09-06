@@ -286,7 +286,7 @@ class DemoAnimation {
         container.appendChild(discoveredArea);
 
         let currentWordIndex = 0;
-        let scrollSpeed = 30; // milliseconds - increased animation speed
+        let scrollSpeed = 150; // milliseconds - slower for better visibility
 
         const discoverNextWord = () => {
             if (currentWordIndex >= this.targetWords.length) {
@@ -319,7 +319,7 @@ class DemoAnimation {
                     // Continue with next word after a brief pause
                     setTimeout(() => {
                         discoverNextWord();
-                    }, 300);
+                    }, 800);
                     return;
                 }
 
@@ -411,7 +411,7 @@ class DemoAnimation {
                     lucide.createIcons();
                 }
             }
-        }, 2000); // Slight delay to show the wallet discovery message
+        }, 4000); // Longer delay to show the wallet discovery message
     }
 
     startDemo() {
