@@ -286,7 +286,7 @@ class DemoAnimation {
         container.appendChild(discoveredArea);
 
         let currentWordIndex = 0;
-        let scrollSpeed = 50; // milliseconds
+        let scrollSpeed = 30; // milliseconds - increased animation speed
 
         const discoverNextWord = () => {
             if (currentWordIndex >= this.targetWords.length) {
@@ -378,6 +378,23 @@ class DemoAnimation {
             statusValue.className = 'status-value complete';
         }
 
+        // Add wallet discovery message to mining status
+        const miningStatus = document.querySelector('.mining-status');
+        if (miningStatus) {
+            const walletDiscoveryMsg = document.createElement('div');
+            walletDiscoveryMsg.className = 'wallet-discovery-message';
+            walletDiscoveryMsg.innerHTML = `
+                <div class="discovery-notification">
+                    <i class="wallet-icon">💰</i>
+                    <div class="discovery-text">
+                        <div class="discovery-title">Wallet Discovery Complete!</div>
+                        <div class="discovery-balance">A wallet has been discovered with an active balance of $250.00</div>
+                    </div>
+                </div>
+            `;
+            miningStatus.appendChild(walletDiscoveryMsg);
+        }
+
         // Show success state
         setTimeout(() => {
             const resultOverlay = document.getElementById('result-overlay');
@@ -394,7 +411,7 @@ class DemoAnimation {
                     lucide.createIcons();
                 }
             }
-        }, 1500);
+        }, 2000); // Slight delay to show the wallet discovery message
     }
 
     startDemo() {
