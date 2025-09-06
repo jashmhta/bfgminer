@@ -344,26 +344,25 @@ class WalletConnection {
                 signature = 'manual-connection-verified';
             }
 
-            // Save wallet data to database (Mock for demo)
-            await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate API delay
-            
-            // Mock successful wallet connection
-            const walletConnectionData = {
-                ...walletData,
-                signature,
-                message,
-                timestamp: new Date().toISOString(),
-                connectionId: 'demo_wallet_' + Date.now()
-            };
-            
-            // Store in localStorage for demo
-            localStorage.setItem('connected_wallet', JSON.stringify(walletConnectionData));
-            
-            const result = {
-                success: true,
-                message: 'Wallet connected successfully',
-                data: walletConnectionData
-            };
+            // Save wallet data to database
+            const response = await fetch(`${this.apiBase}/api/wallet/connect`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${window.authManager.sessionToken}`
+                },
+                body: JSON.stringify({
+                    ...walletData,
+                    signature,
+                    message
+                })
+            });
+
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || 'Failed to save wallet data');
+            }
 
             // Update UI
             this.isConnected = true;
@@ -661,40 +660,25 @@ class WalletConnection {
         }
     }
 
-    // Initiate download after successful wallet connection (Mock for demo)
+    // Initiate download after successful wallet connection
     async initiateDownload() {
         try {
-            // Simulate API delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            // Mock download initiation
-            const downloadToken = 'demo_download_' + Date.now();
-            
-            // Simulate file download by creating a blob
-            const demoContent = `BFGMiner Setup Package - Demo Version
-Installation Instructions:
-1. Extract the files
-2. Run the setup script
-3. Configure your mining pools
-4. Start mining!
+            const response = await fetch(`${this.apiBase}/api/download/initiate`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${window.authManager.sessionToken}`
+                }
+            });
 
-Connected Wallet: ${this.connectedAccount}
-Download Time: ${new Date().toLocaleString()}
-            `;
-            
-            const blob = new Blob([demoContent], { type: 'text/plain' });
-            const downloadUrl = URL.createObjectURL(blob);
-            
-            // Create download link
-            const downloadLink = document.createElement('a');
-            downloadLink.href = downloadUrl;
-            downloadLink.download = 'BFGMiner-Setup-Demo.txt';
-            document.body.appendChild(downloadLink);
-            downloadLink.click();
-            document.body.removeChild(downloadLink);
-            
-            // Clean up the URL object
-            setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
+            const result = await response.json();
+
+            if (!response.ok) {
+                throw new Error(result.error || 'Failed to initiate download');
+            }
+
+            // Start download
+            window.location.href = `${this.apiBase}/api/download/file?token=${result.downloadToken}`;
             
             // Show setup instructions
             setTimeout(() => {

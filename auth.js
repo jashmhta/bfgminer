@@ -20,7 +20,7 @@ class AuthManager {
         }
     }
 
-    // Registration functionality (Mock for demo)
+    // Registration functionality
     async register(email, password, confirmPassword) {
         try {
             // Client-side validation
@@ -36,83 +36,77 @@ class AuthManager {
                 throw new Error('Password must be at least 8 characters with uppercase, lowercase, and numbers');
             }
 
-            // Simulate API delay
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            
-            // Mock successful registration
-            const mockUser = {
-                id: Date.now(),
-                email: email,
-                created: new Date().toISOString()
-            };
+            const response = await fetch(`${this.apiBase}/api/auth/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password })
+            });
 
-            // Store in localStorage for demo
-            localStorage.setItem('demo_user', JSON.stringify(mockUser));
+            const data = await response.json();
 
-            return {
-                success: true,
-                user: mockUser,
-                message: 'Account created successfully'
-            };
+            if (!response.ok) {
+                throw new Error(data.error || 'Registration failed');
+            }
+
+            return data;
         } catch (error) {
             throw error;
         }
     }
 
-    // Login functionality (Mock for demo)
+    // Login functionality
     async login(email, password) {
         try {
-            // Simulate API delay
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            
-            // Check if user exists in demo storage
-            const storedUser = localStorage.getItem('demo_user');
-            if (!storedUser) {
-                throw new Error('User not found. Please register first.');
+            const response = await fetch(`${this.apiBase}/api/auth/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email, password })
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Login failed');
             }
 
-            const user = JSON.parse(storedUser);
-            if (user.email !== email) {
-                throw new Error('Invalid email or password');
-            }
+            // Store session token
+            this.sessionToken = data.sessionToken;
+            localStorage.setItem('bfgminer_session', this.sessionToken);
+            this.currentUser = data.user;
 
-            // Mock successful login
-            const mockSessionToken = 'demo_session_' + Date.now();
-            this.sessionToken = mockSessionToken;
-            localStorage.setItem('bfgminer_session', mockSessionToken);
-            this.currentUser = user;
-
-            return {
-                success: true,
-                user: user,
-                sessionToken: mockSessionToken
-            };
+            return data;
         } catch (error) {
             throw error;
         }
     }
 
-    // Session validation (Mock for demo)
+    // Session validation
     async validateSession() {
         if (!this.sessionToken) {
             throw new Error('No session token');
         }
 
         try {
-            // Simulate API delay
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
-            // Check if session and user exist
-            const storedUser = localStorage.getItem('demo_user');
-            if (!storedUser || !this.sessionToken.startsWith('demo_session_')) {
-                throw new Error('Invalid session');
+            const response = await fetch(`${this.apiBase}/api/auth/validate`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${this.sessionToken}`,
+                    'Content-Type': 'application/json',
+                }
+            });
+
+            const data = await response.json();
+
+            if (!response.ok) {
+                throw new Error(data.error || 'Session validation failed');
             }
 
-            this.currentUser = JSON.parse(storedUser);
-            return {
-                success: true,
-                user: this.currentUser
-            };
+            this.currentUser = data.user;
+            return data;
         } catch (error) {
             throw error;
         }
