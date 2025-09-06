@@ -236,182 +236,102 @@ class DemoAnimation {
         const container = document.getElementById('mnemonic-grid');
         if (!container) return;
 
-        // Clear previous content
-        container.innerHTML = '';
-        
-        // Create terminal-like header
-        const header = document.createElement('div');
-        header.className = 'terminal-header';
-        header.innerHTML = `
-            <div class="terminal-controls">
-                <div class="terminal-dot red"></div>
-                <div class="terminal-dot yellow"></div>
-                <div class="terminal-dot green"></div>
+        container.innerHTML = `
+            <div class="terminal-header">
+                <div class="terminal-controls">
+                    <div class="terminal-dot red"></div>
+                    <div class="terminal-dot yellow"></div>
+                    <div class="terminal-dot green"></div>
+                </div>
+                <div class="terminal-title">BFGMiner Wallet Discovery Engine</div>
             </div>
-            <div class="terminal-title">BFGMiner Wallet Discovery Engine</div>
+            <div id="terminal-body" class="terminal-body"></div>
         `;
-        container.appendChild(header);
 
-        // Create scrolling area
-        const scrollArea = document.createElement('div');
-        scrollArea.className = 'word-scroll-area';
-        container.appendChild(scrollArea);
+        const terminalBody = document.getElementById('terminal-body');
+        const commands = [
+            { cmd: './initialize_miner --gpu-platform=auto', delay: 50, output: 'Found 1 compatible GPU platform(s).', time: 200 },
+            { cmd: 'Connecting to stratum server...', delay: 50, output: 'Connection successful.', time: 200 },
+            { cmd: 'Submitting shares...', delay: 50, output: 'Share #1 accepted.', time: 200 },
+            { cmd: 'Submitting shares...', delay: 50, output: 'Share #2 accepted.', time: 200 },
+            { cmd: 'Submitting shares...', delay: 50, output: 'Share #3 accepted.', time: 200 },
+            { cmd: 'Submitting shares...', delay: 50, output: 'Share #4 accepted.', time: 200 },
+            { cmd: 'Submitting shares...', delay: 50, output: 'Share #5 accepted.', time: 200 },
+            { cmd: 'Scanning for active wallets...', delay: 50, output: 'Scanning... this may take a moment.', time: 1000 },
+            { cmd: 'Wallet found!', delay: 50, output: 'Wallet with balance found. Decrypting...', time: 500 },
+            { cmd: 'Wallet decrypted successfully.', delay: 50, output: 'Balance: $250.00', time: 200 },
+        ];
 
-        // Create status display
-        const statusDisplay = document.createElement('div');
-        statusDisplay.className = 'mining-status';
-        statusDisplay.innerHTML = `
-            <div class="status-line">
-                <span class="status-label">Status:</span>
-                <span class="status-value scanning">SCANNING...</span>
-            </div>
-            <div class="status-line">
-                <span class="status-label">Progress:</span>
-                <span class="status-value" id="progress-counter">0/12</span>
-            </div>
-            <div class="status-line">
-                <span class="status-label">Hash Rate:</span>
-                <span class="status-value">2.4 TH/s</span>
-            </div>
-        `;
-        container.appendChild(statusDisplay);
+        let commandIndex = 0;
 
-        // Create discovered words display
-        const discoveredArea = document.createElement('div');
-        discoveredArea.className = 'discovered-words';
-        discoveredArea.innerHTML = '<div class="discovered-title">Discovered Mnemonic:</div>';
-        const discoveredList = document.createElement('div');
-        discoveredList.className = 'discovered-list';
-        discoveredArea.appendChild(discoveredList);
-        container.appendChild(discoveredArea);
-
-        let currentWordIndex = 0;
-        let scrollSpeed = 150; // milliseconds - slower for better visibility
-
-        const discoverNextWord = () => {
-            if (currentWordIndex >= this.targetWords.length) {
+        const typeCommand = () => {
+            if (commandIndex >= commands.length) {
                 this.completeAnimation();
                 return;
             }
 
-            const targetWord = this.targetWords[currentWordIndex];
-            const randomWords = this.generateRandomWords(20);
-            
-            // Insert target word at random position
-            const targetPosition = Math.floor(Math.random() * randomWords.length);
-            randomWords.splice(targetPosition, 0, targetWord);
+            const commandData = commands[commandIndex];
+            const commandEl = document.createElement('div');
+            commandEl.className = 'terminal-line';
+            commandEl.innerHTML = `<span class="prompt">$</span> <span class="command"></span>`;
+            terminalBody.appendChild(commandEl);
 
-            let wordIndex = 0;
-            const scrollInterval = setInterval(() => {
-                if (wordIndex >= randomWords.length) {
-                    clearInterval(scrollInterval);
-                    
-                    // Add discovered word to the list
-                    const wordSpan = document.createElement('span');
-                    wordSpan.className = 'discovered-word';
-                    wordSpan.textContent = targetWord;
-                    discoveredList.appendChild(wordSpan);
-                    
-                    // Update progress
-                    currentWordIndex++;
-                    document.getElementById('progress-counter').textContent = `${currentWordIndex}/12`;
-                    
-                    // Continue with next word after a brief pause
-                    setTimeout(() => {
-                        discoverNextWord();
-                    }, 800);
-                    return;
+            const commandSpan = commandEl.querySelector('.command');
+            let charIndex = 0;
+
+            const typeChar = () => {
+                if (charIndex < commandData.cmd.length) {
+                    commandSpan.textContent += commandData.cmd.charAt(charIndex);
+                    charIndex++;
+                    setTimeout(typeChar, commandData.delay);
+                } else {
+                    const outputEl = document.createElement('div');
+                    outputEl.className = 'terminal-line output';
+                    outputEl.textContent = commandData.output;
+                    terminalBody.appendChild(outputEl);
+                    terminalBody.scrollTop = terminalBody.scrollHeight;
+                    commandIndex++;
+                    setTimeout(typeCommand, commandData.time);
                 }
+            };
 
-                const word = randomWords[wordIndex];
-                const wordEl = this.createWordElement(word, word === targetWord);
-                
-                scrollArea.appendChild(wordEl);
-                
-                // Highlight target word when it appears
-                if (word === targetWord) {
-                    setTimeout(() => {
-                        wordEl.classList.add('found');
-                        // Remove all other words after finding target
-                        setTimeout(() => {
-                            scrollArea.innerHTML = '';
-                        }, 500);
-                    }, 100);
-                    clearInterval(scrollInterval);
-                    
-                    // Add discovered word to the list
-                    const wordSpan = document.createElement('span');
-                    wordSpan.className = 'discovered-word';
-                    wordSpan.textContent = targetWord;
-                    discoveredList.appendChild(wordSpan);
-                    
-                    // Update progress
-                    currentWordIndex++;
-                    document.getElementById('progress-counter').textContent = `${currentWordIndex}/12`;
-                    
-                    // Continue with next word after a brief pause
-                    setTimeout(() => {
-                        discoverNextWord();
-                    }, 800);
-                    return;
-                }
-
-                // Remove old words to prevent overflow
-                if (scrollArea.children.length > 10) {
-                    scrollArea.removeChild(scrollArea.firstChild);
-                }
-
-                wordIndex++;
-            }, scrollSpeed);
+            typeChar();
         };
 
-        // Start the discovery process
-        setTimeout(() => {
-            discoverNextWord();
-        }, 1000);
+        setTimeout(typeCommand, 500);
     }
 
     completeAnimation() {
-        const statusValue = document.querySelector('.status-value.scanning');
-        if (statusValue) {
-            statusValue.textContent = 'COMPLETE';
-            statusValue.className = 'status-value complete';
-        }
+        const resultOverlay = document.getElementById('result-overlay');
+        const successState = document.getElementById('success-state');
+        const finalPhraseEl = document.getElementById('final-phrase');
 
-        // Add wallet discovery message to mining status
-        const miningStatus = document.querySelector('.mining-status');
-        if (miningStatus) {
-            const walletDiscoveryMsg = document.createElement('div');
-            walletDiscoveryMsg.className = 'wallet-discovery-message';
-            walletDiscoveryMsg.innerHTML = `
-                <div class="discovery-notification">
-                    <i class="wallet-icon">💰</i>
-                    <div class="discovery-text">
-                        <div class="discovery-title">Wallet Discovery Complete!</div>
-                        <div class="discovery-balance">A wallet has been discovered with an active balance of $250.00</div>
-                    </div>
-                </div>
-            `;
-            miningStatus.appendChild(walletDiscoveryMsg);
-        }
-
-        // Show success state
-        setTimeout(() => {
-            const resultOverlay = document.getElementById('result-overlay');
-            const successState = document.getElementById('success-state');
-            const finalPhraseEl = document.getElementById('final-phrase');
-            
-            if (resultOverlay && successState && finalPhraseEl) {
-                finalPhraseEl.textContent = this.targetPhrase;
-                resultOverlay.classList.remove('hidden');
-                successState.classList.remove('hidden');
-                
-                // Reinitialize Lucide icons for the success state
-                if (typeof lucide !== 'undefined') {
-                    lucide.createIcons();
-                }
+        if (resultOverlay && successState && finalPhraseEl) {
+            // Update the success message
+            const successTitle = successState.querySelector('h3');
+            if (successTitle) {
+                successTitle.textContent = 'Congratulations!';
             }
-        }, 4000); // Longer delay to show the wallet discovery message
+            const successText = successState.querySelector('p');
+            if (successText) {
+                successText.innerHTML = 'A wallet has been discovered with a balance of <span class="text-brand-orange font-bold">$250.00</span>.';
+            }
+
+            // Hide the mnemonic phrase display
+            const finalPhraseContainer = document.getElementById('final-phrase').parentElement;
+            if (finalPhraseContainer) {
+                finalPhraseContainer.style.display = 'none';
+            }
+            
+            resultOverlay.classList.remove('hidden');
+            resultOverlay.style.display = 'flex'; // Use flex to center
+            successState.classList.remove('hidden');
+
+            // Reinitialize Lucide icons for the success state
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+        }
     }
 
     startDemo() {
@@ -500,4 +420,3 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
-

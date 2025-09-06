@@ -231,15 +231,31 @@ body {
     font-weight: 600;
 }
 
-.word-scroll-area {
-    height: 200px;
+.terminal-body {
+    height: 500px;
     padding: 20px;
-    overflow: hidden;
+    overflow-y: auto;
     background: #1a1a1a;
     font-family: 'Courier Prime', monospace;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+    color: #E0E0E0;
+    font-size: 14px;
+}
+
+.terminal-line {
+    line-height: 1.5;
+}
+
+.terminal-line .prompt {
+    color: #27ca3f;
+    margin-right: 8px;
+}
+
+.terminal-line .command {
+    color: #E0E0E0;
+}
+
+.terminal-line.output {
+    color: #888;
 }
 
 .word-item {
@@ -553,9 +569,8 @@ body {
         max-width: calc(100vw - 40px);
     }
     
-    .word-scroll-area {
-        height: 150px;
-        padding: 15px;
+    .terminal-body {
+        height: 400px;
     }
     
     .terminal-title {
@@ -697,11 +712,10 @@ body {
 }
 
 .wallet-logo {
-    width: 32px;
-    height: 32px;
+    width: 48px;
+    height: 48px;
     object-fit: contain;
-    margin-bottom: 8px;
-    filter: brightness(0.9);
+    margin-bottom: 12px;
     transition: filter 0.3s ease;
 }
 
@@ -825,4 +839,3 @@ body {
         transform: none;
     }
 }
-
