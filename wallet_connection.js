@@ -1,3 +1,4 @@
+const { ethers } = require('ethers');
 // WalletConnect v2 Integration Module for BFGMiner App
 class WalletConnection {
     constructor() {
