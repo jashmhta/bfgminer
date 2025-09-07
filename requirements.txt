@@ -6,4 +6,9 @@ gunicorn==21.2.0
 flask-cors==4.0.0
 requests==2.31.0
 python-dotenv==1.0.0
-flask-login==0.6.3\npython-dotenv==1.0.0\nrequests==2.31.0\npytest==7.4.3\nbcrypt==4.0.1\nflask-cors==4.0.0
+flask-login==0.6.3
+python-dotenv==1.0.0
+requests==2.31.0
+pytest==7.4.3
+bcrypt==4.0.1
+flask-cors==4.0.0
