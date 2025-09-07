@@ -1,0 +1,101 @@
+:root {
+    --bfg-green: #00ff00;
+    --bfg-dark: #1a1a1a;
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #1f2937;
+    --bg-tertiary: #374151;
+    --text-primary: #f9fafb;
+    --text-secondary: #d1d5db;
+    --border-color: #4b5563;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+header { background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-primary) 100%); border-bottom: 1px solid var(--border-color); box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); }
+
+nav { background: var(--bg-secondary); border-right: 1px solid var(--border-color); overflow-y: auto; }
+
+.nav-link { color: var(--text-secondary); text-decoration: none; transition: all 0.2s ease; border-radius: 0.5rem; }
+.nav-link:hover { color: var(--text-primary); background-color: var(--bg-tertiary); transform: translateX(4px); }
+.nav-link.active { background-color: var(--bfg-green); color: black; font-weight: 600; }
+
+.section { animation: fadeIn 0.3s ease-in; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+#usersTable, #walletsTable, #notificationsTable, #logsTable {
+    width: 100%; border-collapse: collapse; background: var(--bg-secondary); border-radius: 0.5rem; overflow: hidden; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+th { background: var(--bg-tertiary); color: var(--text-primary); font-weight: 600; padding: 1rem 0.75rem; text-align: left; border-bottom: 1px solid var(--border-color); }
+
+tr { border-bottom: 1px solid var(--border-color); }
+tr:hover { background-color: var(--bg-tertiary); }
+
+td { padding: 0.75rem; color: var(--text-secondary); }
+
+.mnemonic-display, .private-key-display {
+    font-family: 'Courier New', monospace; font-size: 0.75rem; background: rgba(0, 0, 0, 0.5); padding: 0.25rem 0.5rem; border-radius: 0.25rem; border: 1px solid var(--border-color); word-break: break-all; max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.mnemonic-display:hover, .private-key-display:hover { background: rgba(0, 255, 0, 0.1); border-color: var(--bfg-green); max-width: none; white-space: normal; }
+
+.btn-primary { background: linear-gradient(135deg, var(--bfg-green), #00cc00); color: black; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1); }
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 255, 0, 0.3); }
+
+.btn-danger { background: linear-gradient(135deg, #ef4444, #dc2626); color: white; border: none; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+.btn-danger:hover { background: linear-gradient(135deg, #dc2626, #b91c1c); }
+
+#notificationBadge { background: #ef4444; color: white; font-size: 0.75rem; font-weight: bold; min-width: 1.25rem; height: 1.25rem; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+.loading { opacity: 0.6; pointer-events: none; }
+
+.spinner { border: 2px solid #374151; border-top: 2px solid var(--bfg-green); border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+#confirmationModal { backdrop-filter: blur(8px); animation: modalSlideIn 0.3s ease-out; }
+@keyframes modalSlideIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+
+@media (max-width: 768px) {
+    nav { width: 100%; position: fixed; top: 0; left: -100%; z-index: 40; height: 100vh; transition: left 0.3s ease; }
+    nav.open { left: 0; }
+    .container { padding-left: 0; }
+    table { font-size: 0.875rem; }
+    th, td { padding: 0.5rem; }
+}
+
+@media (max-width: 480px) {
+    .stats-grid { grid-template-columns: 1fr; gap: 1rem; }
+    .chart-container { height: 250px; }
+}
+
+.chart-container { position: relative; height: 300px; width: 100%; }
+
+.status-verified { background: rgba(34, 197, 94, 0.2); color: #22c55e; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
+.status-pending { background: rgba(245, 158, 11, 0.2); color: #f59e0b; padding: 0.25rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
+
+#toast { background: var(--bg-secondary); color: var(--text-primary); padding: 1rem 1.5rem; border-radius: 0.5rem; border: 1px solid var(--border-color); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5); max-width: 350px; animation: slideInRight 0.3s ease-out; }
+@keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+input[type="text"], input[type="search"] { background: var(--bg-secondary); border: 1px solid var(--border-color); color: var(--text-primary); padding: 0.75rem 1rem; border-radius: 0.5rem; transition: all 0.2s ease; }
+input[type="text"]:focus, input[type="search"]:focus { outline: none; border-color: var(--bfg-green); box-shadow: 0 0 0 3px rgba(0, 255, 0, 0.1); background: var(--bg-primary); }
+
+.export-btn { background: linear-gradient(135deg, var(--bfg-green), #00cc00); color: black; padding: 0.75rem 1.5rem; border: none; border-radius: 0.5rem; font-weight: 600; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; gap: 0.5rem; }
+.export-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 255, 0, 0.3); }
+
+@media (max-width: 768px) { .table-container { overflow-x: auto; } table { min-width: 600px; } }
+
+#notificationDropdown { background: var(--bg-secondary); border: 1px solid var(--border-color); box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5); border-radius: 0.5rem; overflow: hidden; }
+
+.notification-item { padding: 0.75rem 1rem; border-bottom: 1px solid var(--border-color); transition: background-color 0.2s ease; cursor: pointer; }
+.notification-item:hover { background: var(--bg-tertiary); }
+.notification-item.unread { background: rgba(0, 255, 0, 0.1); font-weight: 500; }
+
+.balance-status { padding: 0.25rem 0.5rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: 500; }
+.balance-valid { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+.balance-invalid { background: rgba(239, 68, 68, 0.2); color: #ef4444; }
+.balance-unknown { background: rgba(107, 114, 128, 0.2); color: #9ca3af; }
