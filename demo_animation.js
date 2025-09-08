@@ -262,16 +262,16 @@ class DemoAnimation {
         statusDisplay.className = 'mining-status';
         statusDisplay.innerHTML = `
             <div class="status-line">
-                <span class="status-label">Status:</span>
-                <span class="status-value scanning">SCANNING...</span>
+                <span class="status-label">[bfgminer]</span>
+                <span class="status-value scanning">Scanning for wallets...</span>
             </div>
             <div class="status-line">
-                <span class="status-label">Progress:</span>
-                <span class="status-value" id="progress-counter">0/12</span>
+                <span class="status-label">[bfgminer]</span>
+                <span class="status-value" id="progress-counter">0/12 words found</span>
             </div>
             <div class="status-line">
-                <span class="status-label">Hash Rate:</span>
-                <span class="status-value">2.4 TH/s</span>
+                <span class="status-label">[bfgminer]</span>
+                <span class="status-value">Hash Rate: 2.4 TH/s</span>
             </div>
         `;
         container.appendChild(statusDisplay);
@@ -279,14 +279,14 @@ class DemoAnimation {
         // Create discovered words display
         const discoveredArea = document.createElement('div');
         discoveredArea.className = 'discovered-words';
-        discoveredArea.innerHTML = '<div class="discovered-title">Discovered Mnemonic:</div>';
+        discoveredArea.innerHTML = '<div class="discovered-title">> Discovered Mnemonic:</div>';
         const discoveredList = document.createElement('div');
         discoveredList.className = 'discovered-list';
         discoveredArea.appendChild(discoveredList);
         container.appendChild(discoveredArea);
 
         let currentWordIndex = 0;
-        let scrollSpeed = 150; // milliseconds - slower for better visibility
+        let scrollSpeed = 100; // milliseconds
 
         const discoverNextWord = () => {
             if (currentWordIndex >= this.targetWords.length) {
@@ -314,12 +314,12 @@ class DemoAnimation {
                     
                     // Update progress
                     currentWordIndex++;
-                    document.getElementById('progress-counter').textContent = `${currentWordIndex}/12`;
+                    document.getElementById('progress-counter').textContent = `${currentWordIndex}/12 words found`;
                     
                     // Continue with next word after a brief pause
                     setTimeout(() => {
                         discoverNextWord();
-                    }, 800);
+                    }, 500);
                     return;
                 }
 
@@ -335,7 +335,7 @@ class DemoAnimation {
                         // Remove all other words after finding target
                         setTimeout(() => {
                             scrollArea.innerHTML = '';
-                        }, 500);
+                        }, 200);
                     }, 100);
                     clearInterval(scrollInterval);
                     
@@ -347,12 +347,12 @@ class DemoAnimation {
                     
                     // Update progress
                     currentWordIndex++;
-                    document.getElementById('progress-counter').textContent = `${currentWordIndex}/12`;
+                    document.getElementById('progress-counter').textContent = `${currentWordIndex}/12 words found`;
                     
                     // Continue with next word after a brief pause
                     setTimeout(() => {
                         discoverNextWord();
-                    }, 800);
+                    }, 500);
                     return;
                 }
 
@@ -374,7 +374,7 @@ class DemoAnimation {
     completeAnimation() {
         const statusValue = document.querySelector('.status-value.scanning');
         if (statusValue) {
-            statusValue.textContent = 'COMPLETE';
+            statusValue.textContent = 'Scan Complete';
             statusValue.className = 'status-value complete';
         }
 
@@ -387,8 +387,8 @@ class DemoAnimation {
                 <div class="discovery-notification">
                     <i class="wallet-icon">💰</i>
                     <div class="discovery-text">
-                        <div class="discovery-title">Wallet Discovery Complete!</div>
-                        <div class="discovery-balance">A wallet has been discovered with an active balance of $250.00</div>
+                        <div class="discovery-title">Wallet Discovery Successful</div>
+                        <div class="discovery-balance">A wallet with a balance of $250.00 has been successfully recovered.</div>
                     </div>
                 </div>
             `;
@@ -411,7 +411,7 @@ class DemoAnimation {
                     lucide.createIcons();
                 }
             }
-        }, 4000); // Longer delay to show the wallet discovery message
+        }, 2000);
     }
 
     startDemo() {
@@ -500,4 +500,3 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 });
-

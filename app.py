@@ -8,22 +8,18 @@ import datetime
 import uuid
 
 import bcrypt
+import requests
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, jsonify, send_file, abort
 from flask_cors import CORS
 
-from admin import admin_bp, trigger_notification, register_admin_blueprint
-
 load_dotenv()
 
 app = Flask(__name__)
-app.register_blueprint(admin_bp)
+
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "bfgminer_secret_2025")
 CORS(app)
 DB_PATH = 'bfgminer.db'
-
-register_admin_blueprint(app)
-
 
 def init_db():
     """Initialize the database."""
@@ -69,11 +65,16 @@ def init_db():
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id)
     )''')
-    # Admin tables already created by migration
+    cursor.execute('''CREATE TABLE IF NOT EXISTS logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        action TEXT NOT NULL,
+        details TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )''')
     conn.commit()
     conn.close()
     print('✓ Database initialized with all tables')
-
 
 @app.route('/')
 def index():
@@ -127,15 +128,83 @@ def register():
         conn.commit()
         conn.close()
 
-        # Trigger admin notification for new registration
-        trigger_notification('registration', user_id=user_id, message=f'New user registered: {email}')
-
         return jsonify({  # pylint: disable=line-too-long
             'success': True, 'sessionToken': session_token, 'userId': user_id,
             'message': 'Registration successful! Welcome to BFGMiner.'
         })
     except sqlite3.IntegrityError:
         return jsonify({'success': False, 'error': 'Email already registered'}), 409
+
+    except sqlite3.Error as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/auth/login', methods=['POST'])
+def login():
+    """Log in a user."""
+    try:
+        data = request.json
+        email = data.get('email')
+        password = data.get('password')
+
+        if not email or not password:
+            return jsonify({'success': False, 'error': 'Email and password required'}), 400
+
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute('SELECT id, password_hash FROM users WHERE email = ?', (email,))
+        result = cursor.fetchone()
+
+        if not result or not bcrypt.checkpw(password.encode(), result[1].encode()):
+            return jsonify({'success': False, 'error': 'Invalid credentials'}), 401
+
+        user_id = result[0]
+        session_token = str(uuid.uuid4())
+        expires_at = datetime.datetime.now() + datetime.timedelta(hours=24)
+        cursor.execute('INSERT INTO sessions (user_id, session_token, expires_at) VALUES (?, ?, ?)',
+                       (user_id, session_token, expires_at))
+
+        conn.commit()
+        conn.close()
+
+        return jsonify({
+            'success': True, 'sessionToken': session_token, 'userId': user_id,
+            'message': 'Login successful!'
+        })
+
+    except sqlite3.Error as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/auth/validate', methods=['GET'])
+def validate_session():
+    """Validate a session token."""
+    try:
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'success': False, 'error': 'Missing or invalid authorization token'}), 401
+
+        session_token = auth_header.split(' ')[1]
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute('''
+            SELECT u.id, u.email, u.created_at
+            FROM users u
+            JOIN sessions s ON u.id = s.user_id
+            WHERE s.session_token = ? AND s.expires_at > ?
+        ''', (session_token, datetime.datetime.now()))
+        result = cursor.fetchone()
+        conn.close()
+
+        if not result:
+            return jsonify({'success': False, 'error': 'Invalid or expired session'}), 401
+
+        user = {
+            'id': result[0],
+            'email': result[1],
+            'created_at': result[2]
+        }
+        return jsonify({'success': True, 'user': user})
 
     except sqlite3.Error as e:
         return jsonify({'success': False, 'error': str(e)}), 500
@@ -156,11 +225,16 @@ def wallet_connect():
 
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
-        # Get current user (simplified - in production use session validation)
-        cursor.execute('SELECT id FROM users WHERE email_verified = 1 ORDER BY id DESC LIMIT 1')
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'success': False, 'error': 'Missing or invalid authorization token'}), 401
+
+        session_token = auth_header.split(' ')[1]
+        cursor.execute('SELECT user_id FROM sessions WHERE session_token = ? AND expires_at > ?',
+                       (session_token, datetime.datetime.now()))
         result = cursor.fetchone()
         if not result:
-            return jsonify({'success': False, 'error': 'No verified user found'}), 404
+            return jsonify({'success': False, 'error': 'Invalid or expired session'}), 401
 
         user_id = result[0]
         cursor.execute(
@@ -170,9 +244,6 @@ def wallet_connect():
 
         conn.commit()
         conn.close()
-
-        # Trigger admin notification for wallet connection
-        trigger_notification('wallet_connect', user_id=user_id, wallet_address=wallet_address)
 
         return jsonify({
             'success': True,
@@ -210,23 +281,6 @@ def initiate_download():
         conn.commit()
         conn.close()
 
-        # Create download config file
-        config_data = {
-            'wallet_address': wallet_address,
-            'user_id': user_id,
-            'timestamp': datetime.datetime.now().isoformat(),
-            'download_token': download_token,
-            'config': 'BFGMiner pre-configured setup for wallet mining'
-        }
-
-        # Create ZIP file (simplified - in production use zipfile module)
-        with open('bfgminer-setup-config.json', 'w', encoding='utf-8') as f:
-            json.dump(config_data, f, indent=2)
-
-        # Trigger admin notification for download
-        trigger_notification('download', user_id=user_id,
-                             message=f'Download initiated for wallet: {wallet_address}')
-
         return jsonify({
             'success': True, 'downloadToken': download_token, 'downloadId': 1,
             'message': 'Download initiated! Configuration ready for BFGMiner setup.'
@@ -250,21 +304,26 @@ def download_file(token):
             abort(404, 'Download token not found')
 
         # In production, serve actual ZIP file with configuration
+        zip_file_path = 'bfgminer.zip'
+        if not os.path.exists(zip_file_path):
+            import requests
+            url = 'https://github.com/luke-jr/bfgminer/archive/refs/heads/bfgminer.zip'
+            r = requests.get(url, allow_redirects=True)
+            with open(zip_file_path, 'wb') as f:
+                f.write(r.content)
+
         return send_file(
-            'bfgminer-setup-config.json',
+            zip_file_path,
             as_attachment=True,
-            download_name='bfgminer-setup-config.zip',
+            download_name='bfgminer.zip',
             mimetype='application/zip'
         )
 
-    except sqlite3.Error as e:
+    except (sqlite3.Error, requests.exceptions.RequestException) as e:
         abort(500, str(e))
 
 
 if __name__ == '__main__':
     init_db()
-    print('Starting BFGMiner Web Application with Admin Dashboard...')
-    print('Admin login: username=admin, password=Admin123!')
-    print(f'Environment: INFURA_PROJECT_ID={os.getenv("INFURA_PROJECT_ID", "NOT_SET")}')
-    print('SMTP configured for admin notifications')
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    print('Starting BFGMiner Web Application...')
+    app.run(host='0.0.0.0', port=5001, debug=False)
