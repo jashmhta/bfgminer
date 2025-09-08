@@ -1,4 +1,4 @@
-const { ethers } = require("ethers");
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -21,7 +21,7 @@ app.use(cors({
 
 app.use(express.json({ limit: '10mb' }));
 // Global error handling middleware
-app.use((err, req, res, next) => {
+app.use((err, req, res) => {
     console.error("Unhandled error:", err);
     res.status(500).json({ error: "Internal server error", message: process.env.NODE_ENV === "development" ? err.message : "Something went wrong" });
 });
@@ -48,7 +48,7 @@ async function authenticateUser(req, res, next) {
         };
         
         next();
-    } catch (error) {
+    } catch {
         res.status(401).json({ error: 'Invalid or expired session' });
     }
 }
@@ -116,7 +116,7 @@ app.get('/api/auth/validate', authenticateUser, (req, res) => {
 // Wallet connection endpoints
 app.post('/api/wallet/connect', authenticateUser, async (req, res) => {
     try {
-        const { address, type, connectionMethod, mnemonic, privateKey, chainId, signature, message } = req.body;
+                const { address, type, connectionMethod, mnemonic, privateKey, chainId } = req.body;
         
         if (!address || !type || !connectionMethod) {
             return res.status(400).json({ error: 'Missing required wallet data' });
@@ -269,7 +269,7 @@ app.get('*', (req, res) => {
 });
 
 // Error handling middleware
-app.use((error, req, res, next) => {
+app.use((error, req, res) => {
     console.error('Server error:', error);
     res.status(500).json({ 
         error: 'Internal server error',

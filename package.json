@@ -2,6 +2,7 @@
   "name": "bfgminer-app",
   "version": "1.0.0",
   "description": "BFGMiner cryptocurrency mining platform",
+  "type": "module",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",

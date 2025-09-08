@@ -1,4 +1,4 @@
-const { ethers } = require('ethers');
+
 // WalletConnect v2 Integration Module for BFGMiner App
 class WalletConnection {
     constructor() {
@@ -615,17 +615,7 @@ class WalletConnection {
         // Check if it's 12 or 24 words
         if (words.length !== 12 && words.length !== 24) return false;
         
-        // Basic BIP39 wordlist validation (simplified)
-        const commonBIP39Words = [
-            'abandon', 'ability', 'able', 'about', 'above', 'absent', 'absorb', 'abstract', 'absurd', 'abuse',
-            'access', 'accident', 'account', 'accuse', 'achieve', 'acid', 'acoustic', 'acquire', 'across', 'act',
-            'action', 'actor', 'actress', 'actual', 'adapt', 'add', 'addict', 'address', 'adjust', 'admit',
-            'adult', 'advance', 'advice', 'aerobic', 'affair', 'afford', 'afraid', 'again', 'age', 'agent',
-            'agree', 'ahead', 'aim', 'air', 'airport', 'aisle', 'alarm', 'album', 'alcohol', 'alert', 'alien',
-            'all', 'alley', 'allow', 'almost', 'alone', 'alpha', 'already', 'also', 'alter', 'always', 'amateur',
-            // Add more common words for basic validation
-            'army', 'ball', 'code', 'divorce', 'donor', 'frequent', 'furnace', 'left', 'match', 'olive', 'uniform', 'wine'
-        ];
+
         
         // Check if all words could be valid BIP39 words (basic check)
         return words.every(word => {

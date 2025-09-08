@@ -473,25 +473,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    const validateEmail = (email) => {
-        const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
-        return gmailRegex.test(email);
-    };
 
-    const validatePassword = (password) => {
-        return password.length >= 8;
-    };
-
-    const validateMnemonic = (mnemonic) => {
-        const words = mnemonic.trim().split(/\s+/);
-        // Basic validation: 12 or 24 words, or looks like a private key
-        if (words.length === 12 || words.length === 24) {
-            return words.every(word => word.length > 0);
-        }
-        // Check if it looks like a private key (64 hex characters)
-        const hexRegex = /^[a-fA-F0-9]{64}$/;
-        return hexRegex.test(mnemonic.replace(/\s/g, ''));
-    };
 
     // Registration form submission
     if (registrationForm) {

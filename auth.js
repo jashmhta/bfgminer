@@ -22,7 +22,6 @@ class AuthManager {
 
     // Registration functionality
     async register(email, password, confirmPassword) {
-        try {
             // Client-side validation
             if (!this.isValidGmail(email)) {
                 throw new Error('Only Gmail addresses are allowed');
@@ -51,14 +50,10 @@ class AuthManager {
             }
 
             return data;
-        } catch (error) {
-            throw error;
-        }
     }
 
     // Login functionality
     async login(email, password) {
-        try {
             const response = await fetch(`${this.apiBase}/api/auth/login`, {
                 method: 'POST',
                 headers: {
@@ -79,9 +74,6 @@ class AuthManager {
             this.currentUser = data.user;
 
             return data;
-        } catch (error) {
-            throw error;
-        }
     }
 
     // Session validation
@@ -90,7 +82,6 @@ class AuthManager {
             throw new Error('No session token');
         }
 
-        try {
             const response = await fetch(`${this.apiBase}/api/auth/validate`, {
                 method: 'GET',
                 headers: {
@@ -107,9 +98,6 @@ class AuthManager {
 
             this.currentUser = data.user;
             return data;
-        } catch (error) {
-            throw error;
-        }
     }
 
     // Logout functionality
@@ -187,7 +175,7 @@ class AuthManager {
         submitBtn.innerHTML = '<span class="loading-spinner"></span> Creating Account...';
 
         try {
-            const result = await this.register(email, password, confirmPassword);
+                        await this.register(email, password, confirmPassword);
             
             // Show success message
             if (successDiv) {
