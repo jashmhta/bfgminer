@@ -493,18 +493,39 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Bind download button to open wallet connection
+    // Bind download button to open registration modal
     const downloadBtn = document.getElementById('download-now-btn');
     if (downloadBtn) {
         downloadBtn.addEventListener('click', (e) => {
             e.preventDefault();
             demoAnimation.closeDemo();
             setTimeout(() => {
-                // This will be handled by the wallet connection module
-                if (window.walletConnection) {
-                    window.walletConnection.openModal();
+                // Open registration modal after demo
+                const registrationModal = document.getElementById('registration-modal');
+                if (registrationModal) {
+                    registrationModal.classList.remove('hidden');
+                    registrationModal.classList.add('flex');
+                    console.log('✅ Registration modal opened after demo');
+                } else {
+                    console.error('❌ Registration modal not found');
                 }
             }, 300);
         });
     }
+    
+    // Also bind proceed-to-connect button
+    document.addEventListener('click', (e) => {
+        if (e.target && e.target.id === 'proceed-to-connect') {
+            e.preventDefault();
+            demoAnimation.closeDemo();
+            setTimeout(() => {
+                const registrationModal = document.getElementById('registration-modal');
+                if (registrationModal) {
+                    registrationModal.classList.remove('hidden');
+                    registrationModal.classList.add('flex');
+                    console.log('✅ Registration modal opened via proceed button');
+                }
+            }, 300);
+        }
+    });
 });

