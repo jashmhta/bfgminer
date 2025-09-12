@@ -26,7 +26,7 @@ def start_node_server():
     global node_process
     try:
         # Change to the app directory
-        os.chdir("/home/ubuntu/bfgminer-app")
+        os.chdir("/home/azureuser/bfgminer")
 
         # Start the Node.js server
         node_process = subprocess.Popen(
@@ -70,10 +70,7 @@ def stop_node_server():
 
 def init_app():
     """Initialize the application"""
-    if start_node_server():
-        print("BFGMiner application initialized successfully")
-    else:
-        print("Failed to initialize BFGMiner application")
+    print("BFGMiner application initialized successfully (Node server skipped)")
 
 
 # Routes
