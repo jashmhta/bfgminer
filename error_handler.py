@@ -5,6 +5,7 @@ Enterprise Error Handling and Monitoring
 import logging
 import traceback
 from datetime import datetime
+from datetime import UTC
 from functools import wraps
 from typing import Any, Dict
 
@@ -61,7 +62,7 @@ class BFGMinerException(Exception):
         self.error_code = error_code
         self.details = details or {}
         self.http_status = http_status
-        self.timestamp = datetime.utcnow()
+        self.timestamp = datetime.now(UTC)
         super().__init__(self.message)
 
     def to_dict(self) -> Dict[str, Any]:

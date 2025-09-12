@@ -20,6 +20,8 @@ from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from web3 import Web3
+from web3.providers import HTTPProvider
+from web3.providers import HTTPProvider
 
 from blockchain_validator import BlockchainValidator
 

@@ -5,7 +5,13 @@ Enterprise Monitoring and Health Checks
 import sqlite3
 import time
 from dataclasses import dataclass
-from datetime import datetime
+from datetime 
+
+import datetime
+from datetime import UTC
+
+from datetime import UTC
+
 from typing import Any, Dict, List
 
 import psutil
@@ -47,10 +53,10 @@ class SystemMonitor:
                     "free": disk.free,
                     "usage_percent": (disk.used / disk.total) * 100,
                 },
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(UTC).isoformat(),
             }
         except Exception as e:
-            return {"error": str(e), "timestamp": datetime.utcnow().isoformat()}
+            return {"error": str(e), "timestamp": datetime.now(UTC).isoformat()}
 
 
 class DatabaseMonitor:
@@ -298,7 +304,7 @@ class HealthChecker:
 
         return {
             "status": overall_status,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "system_metrics": system_metrics,
             "services": {
                 hc.service: {
@@ -328,7 +334,7 @@ class HealthChecker:
 
         return {
             "ready": is_ready,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "checks": {"database": db_health.status == "healthy"},
         }
 
@@ -337,6 +343,6 @@ class HealthChecker:
         # Basic liveness check - service is alive if it can respond
         return {
             "alive": True,
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(UTC).isoformat(),
             "uptime": time.time(),  # This would be actual uptime in production
         }

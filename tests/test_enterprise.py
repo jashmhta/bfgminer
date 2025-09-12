@@ -244,9 +244,12 @@ class TestBlockchainValidator:
         self.config = AppConfig()
         self.validator = EnterpriseBlockchainValidator(self.config)
 
-    @patch("web3.Web3")
-    def test_blockchain_connection(self, mock_web3):
+    @patch("enterprise_improvements.HTTPProvider")
+    @patch("enterprise_improvements.Web3")
+    def test_blockchain_connection(self, mock_web3, mock_http):
         """Test blockchain connection with mocking"""
+        mock_provider = Mock()
+        mock_http.return_value = mock_provider
         mock_instance = Mock()
         mock_instance.is_connected.return_value = True
         mock_web3.return_value = mock_instance
@@ -271,7 +274,7 @@ class TestBlockchainValidator:
     def test_mnemonic_validation_format(self):
         """Test mnemonic phrase format validation"""
         # Valid mnemonic (12 words)
-        valid_mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about" # noqa: E501
+        valid_mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"  # noqa: E501
         result = self.validator.validate_mnemonic(valid_mnemonic)
 
         # Should validate format
@@ -484,7 +487,7 @@ class TestIntegration:
             assert wallet is not None
             assert wallet["wallet_address"] == wallet_address
             assert wallet["connection_type"] == connection_type
-            assert wallet["is_validated"] is True
+            assert wallet["is_validated"] == 1
 
 
 if __name__ == "__main__":
