@@ -48,7 +48,9 @@ def cached_cell_len(text: str) -> int:
     return sum(map(get_character_cell_size, text))
 
 
-def cell_len(text: str, _cell_len: Callable[[str], int] = cached_cell_len) -> int:
+def cell_len(
+    text: str, _cell_len: Callable[[str], int] = cached_cell_len
+) -> int:
     """Get the number of cells required to display text.
 
     Args:
@@ -167,8 +169,16 @@ def chop_cells(
 
 if __name__ == "__main__":  # pragma: no cover
     print(get_character_cell_size("😽"))
-    for line in chop_cells("""这是对亚洲语言支持的测试。面对模棱两可的想法，拒绝猜测的诱惑。""", 8):
+    for line in chop_cells(
+        """这是对亚洲语言支持的测试。面对模棱两可的想法，拒绝猜测的诱惑。""", 8
+    ):
         print(line)
     for n in range(80, 1, -1):
-        print(set_cell_size("""这是对亚洲语言支持的测试。面对模棱两可的想法，拒绝猜测的诱惑。""", n) + "|")
+        print(
+            set_cell_size(
+                """这是对亚洲语言支持的测试。面对模棱两可的想法，拒绝猜测的诱惑。""",
+                n,
+            )
+            + "|"
+        )
         print("x" * n)

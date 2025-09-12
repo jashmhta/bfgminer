@@ -11,7 +11,9 @@ from . import test_build_scripts
 class TestInstallScripts(support.TempdirManager):
     def test_default_settings(self):
         dist = Distribution()
-        dist.command_obj["build"] = support.DummyCommand(build_scripts="/foo/bar")
+        dist.command_obj["build"] = support.DummyCommand(
+            build_scripts="/foo/bar"
+        )
         dist.command_obj["install"] = support.DummyCommand(
             install_scripts="/splat/funk",
             force=True,
@@ -33,7 +35,9 @@ class TestInstallScripts(support.TempdirManager):
     def test_installation(self):
         source = self.mkdtemp()
 
-        expected = test_build_scripts.TestBuildScripts.write_sample_scripts(source)
+        expected = test_build_scripts.TestBuildScripts.write_sample_scripts(
+            source
+        )
 
         target = self.mkdtemp()
         dist = Distribution()

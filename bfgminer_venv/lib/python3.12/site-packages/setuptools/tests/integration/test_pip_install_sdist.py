@@ -124,7 +124,9 @@ def _prepare(tmp_path, venv_python, monkeypatch):
 
 @pytest.mark.parametrize(("package", "version"), EXAMPLES)
 @pytest.mark.uses_network
-def test_install_sdist(package, version, tmp_path, venv_python, setuptools_wheel):
+def test_install_sdist(
+    package, version, tmp_path, venv_python, setuptools_wheel
+):
     venv_pip = (venv_python, "-m", "pip")
     sdist = retrieve_sdist(package, version, tmp_path)
     deps = build_deps(package, sdist)
@@ -178,7 +180,11 @@ def retrieve_pypi_sdist_metadata(package, version):
         raise ValueError(f"Release for {package} {version} was yanked")
 
     version = metadata["info"]["version"]
-    release = metadata["releases"][version] if version is LATEST else metadata["urls"]
+    release = (
+        metadata["releases"][version]
+        if version is LATEST
+        else metadata["urls"]
+    )
     (sdist,) = filter(lambda d: d["packagetype"] == "sdist", release)
     return sdist
 

@@ -23,7 +23,10 @@ def backtick(state: StateInline, silent: bool) -> bool:
     marker = state.src[start:pos]
     openerLength = len(marker)
 
-    if state.backticksScanned and state.backticks.get(openerLength, 0) <= start:
+    if (
+        state.backticksScanned
+        and state.backticks.get(openerLength, 0) <= start
+    ):
         if not silent:
             state.pending += marker
         state.pos += openerLength

@@ -9,7 +9,9 @@ returns the end of the label
 from markdown_it.rules_inline import StateInline
 
 
-def parseLinkLabel(state: StateInline, start: int, disableNested: bool = False) -> int:
+def parseLinkLabel(
+    state: StateInline, start: int, disableNested: bool = False
+) -> int:
     labelEnd = -1
     oldPos = state.pos
     found = False

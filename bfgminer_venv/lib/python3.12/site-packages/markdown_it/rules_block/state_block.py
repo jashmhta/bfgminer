@@ -47,13 +47,19 @@ class StateBlock(StateBase):
         self.bsCount: list[int] = []
 
         # block parser variables
-        self.blkIndent = 0  # required block content indent (for example, if we are
+        self.blkIndent = (
+            0  # required block content indent (for example, if we are
+        )
         # inside a list, it would be positioned after list marker)
         self.line = 0  # line index in src
         self.lineMax = 0  # lines count
         self.tight = False  # loose/tight mode for lists
-        self.ddIndent = -1  # indent of the current dd block (-1 if there isn't any)
-        self.listIndent = -1  # indent of the current list block (-1 if there isn't any)
+        self.ddIndent = (
+            -1
+        )  # indent of the current dd block (-1 if there isn't any)
+        self.listIndent = (
+            -1
+        )  # indent of the current list block (-1 if there isn't any)
 
         # can be 'blockquote', 'list', 'root', 'paragraph' or 'reference'
         # used in lists to determine if they interrupt a paragraph
@@ -108,7 +114,9 @@ class StateBlock(StateBase):
         self.lineMax = len(self.bMarks) - 1  # don't count last fake line
 
         # pre-check if code blocks are enabled, to speed up is_code_block method
-        self._code_enabled = "code" in self.md["block"].ruler.get_active_rules()
+        self._code_enabled = (
+            "code" in self.md["block"].ruler.get_active_rules()
+        )
 
     def __repr__(self) -> str:
         return (
@@ -136,9 +144,9 @@ class StateBlock(StateBase):
         """."""
         while from_pos < self.lineMax:
             try:
-                if (self.bMarks[from_pos] + self.tShift[from_pos]) < self.eMarks[
-                    from_pos
-                ]:
+                if (
+                    self.bMarks[from_pos] + self.tShift[from_pos]
+                ) < self.eMarks[from_pos]:
                     break
             except IndexError:
                 pass
@@ -211,7 +219,9 @@ class StateBlock(StateBase):
                 return pos + 1
         return pos
 
-    def getLines(self, begin: int, end: int, indent: int, keepLastLF: bool) -> str:
+    def getLines(
+        self, begin: int, end: int, indent: int, keepLastLF: bool
+    ) -> str:
         """Cut lines range from source."""
         line = begin
         if begin >= end:
@@ -245,7 +255,9 @@ class StateBlock(StateBase):
             if lineIndent > indent:
                 # partially expanding tabs in code blocks, e.g '\t\tfoobar'
                 # with indent=2 becomes '  \tfoobar'
-                queue[i - 1] = (" " * (lineIndent - indent)) + self.src[first:last]
+                queue[i - 1] = (" " * (lineIndent - indent)) + self.src[
+                    first:last
+                ]
             else:
                 queue[i - 1] = self.src[first:last]
 

@@ -349,12 +349,16 @@ class Pretty(JupyterMixin):
             expand_all=self.expand_all,
         )
         text_width = (
-            max(cell_len(line) for line in pretty_str.splitlines()) if pretty_str else 0
+            max(cell_len(line) for line in pretty_str.splitlines())
+            if pretty_str
+            else 0
         )
         return Measurement(text_width, text_width)
 
 
-def _get_braces_for_defaultdict(_object: DefaultDict[Any, Any]) -> Tuple[str, str, str]:
+def _get_braces_for_defaultdict(
+    _object: DefaultDict[Any, Any],
+) -> Tuple[str, str, str]:
     return (
         f"defaultdict({_object.default_factory!r}, {{",
         "})",
@@ -373,7 +377,11 @@ def _get_braces_for_deque(_object: Deque[Any]) -> Tuple[str, str, str]:
 
 
 def _get_braces_for_array(_object: "array[Any]") -> Tuple[str, str, str]:
-    return (f"array({_object.typecode!r}, [", "])", f"array({_object.typecode!r})")
+    return (
+        f"array({_object.typecode!r}, [",
+        "])",
+        f"array({_object.typecode!r})",
+    )
 
 
 _BRACES: Dict[type, Callable[[Any], Tuple[str, str, str]]] = {
@@ -389,7 +397,11 @@ _BRACES: Dict[type, Callable[[Any], Tuple[str, str, str]]] = {
     UserList: lambda _object: ("[", "]", "[]"),
     set: lambda _object: ("{", "}", "set()"),
     tuple: lambda _object: ("(", ")", "()"),
-    MappingProxyType: lambda _object: ("mappingproxy({", "})", "mappingproxy({})"),
+    MappingProxyType: lambda _object: (
+        "mappingproxy({",
+        "})",
+        "mappingproxy({})",
+    ),
 }
 _CONTAINERS = tuple(_BRACES.keys())
 _MAPPING_CONTAINERS = (dict, os._Environ, MappingProxyType, UserDict)
@@ -431,7 +443,11 @@ class Node:
         elif self.children is not None:
             if self.children:
                 yield self.open_brace
-                if self.is_tuple and not self.is_namedtuple and len(self.children) == 1:
+                if (
+                    self.is_tuple
+                    and not self.is_namedtuple
+                    and len(self.children) == 1
+                ):
                     yield from self.children[0].iter_tokens()
                     yield ","
                 else:
@@ -465,7 +481,10 @@ class Node:
         return repr_text
 
     def render(
-        self, max_width: int = 80, indent_size: int = 4, expand_all: bool = False
+        self,
+        max_width: int = 80,
+        indent_size: int = 4,
+        expand_all: bool = False,
     ) -> str:
         """Render the node to a pretty repr.
 
@@ -553,9 +572,7 @@ class _Line:
         if self.last:
             return f"{self.whitespace}{self.text}{self.node or ''}"
         else:
-            return (
-                f"{self.whitespace}{self.text}{self.node or ''}{self.suffix.rstrip()}"
-            )
+            return f"{self.whitespace}{self.text}{self.node or ''}{self.suffix.rstrip()}"
 
 
 def _is_namedtuple(obj: Any) -> bool:
@@ -630,7 +647,9 @@ def traverse(
         children: List[Node]
         reached_max_depth = max_depth is not None and depth >= max_depth
 
-        def iter_rich_args(rich_args: Any) -> Iterable[Union[Any, Tuple[str, Any]]]:
+        def iter_rich_args(
+            rich_args: Any,
+        ) -> Iterable[Union[Any, Tuple[str, Any]]]:
             for arg in rich_args:
                 if _safe_isinstance(arg, tuple):
                     if len(arg) == 3:
@@ -706,7 +725,9 @@ def traverse(
                             append(child_node)
             else:
                 node = Node(
-                    value_repr=f"<{class_name}>" if angular else f"{class_name}()",
+                    value_repr=(
+                        f"<{class_name}>" if angular else f"{class_name}()"
+                    ),
                     children=[],
                     last=root,
                 )
@@ -729,7 +750,9 @@ def traverse(
                     )
 
                     def iter_attrs() -> (
-                        Iterable[Tuple[str, Any, Optional[Callable[[Any], str]]]]
+                        Iterable[
+                            Tuple[str, Any, Optional[Callable[[Any], str]]]
+                        ]
                     ):
                         """Iterate over attr fields and values."""
                         for attr in attr_fields:
@@ -743,12 +766,20 @@ def traverse(
                                     yield (
                                         attr.name,
                                         value,
-                                        attr.repr if callable(attr.repr) else None,
+                                        (
+                                            attr.repr
+                                            if callable(attr.repr)
+                                            else None
+                                        ),
                                     )
 
-                    for last, (name, value, repr_callable) in loop_last(iter_attrs()):
+                    for last, (name, value, repr_callable) in loop_last(
+                        iter_attrs()
+                    ):
                         if repr_callable:
-                            child_node = Node(value_repr=str(repr_callable(value)))
+                            child_node = Node(
+                                value_repr=str(repr_callable(value))
+                            )
                         else:
                             child_node = _traverse(value, depth=depth + 1)
                         child_node.last = last
@@ -757,7 +788,9 @@ def traverse(
                         append(child_node)
             else:
                 node = Node(
-                    value_repr=f"{obj.__class__.__name__}()", children=[], last=root
+                    value_repr=f"{obj.__class__.__name__}()",
+                    children=[],
+                    last=root,
                 )
             pop_visited(obj_id)
         elif (
@@ -785,7 +818,9 @@ def traverse(
                     for field in fields(obj)
                     if field.repr and hasattr(obj, field.name)
                 ):
-                    child_node = _traverse(getattr(obj, field.name), depth=depth + 1)
+                    child_node = _traverse(
+                        getattr(obj, field.name), depth=depth + 1
+                    )
                     child_node.key_repr = field.name
                     child_node.last = last
                     child_node.key_separator = "="
@@ -860,7 +895,12 @@ def traverse(
                         child_node.last = index == last_item_index
                         append(child_node)
                 if max_length is not None and num_items > max_length:
-                    append(Node(value_repr=f"... +{num_items - max_length}", last=True))
+                    append(
+                        Node(
+                            value_repr=f"... +{num_items - max_length}",
+                            last=True,
+                        )
+                    )
             else:
                 node = Node(empty=empty, children=[], last=root)
 
@@ -907,7 +947,10 @@ def pretty_repr(
         node = _object
     else:
         node = traverse(
-            _object, max_length=max_length, max_string=max_string, max_depth=max_depth
+            _object,
+            max_length=max_length,
+            max_string=max_string,
+            max_depth=max_depth,
         )
     repr_str: str = node.render(
         max_width=max_width, indent_size=indent_size, expand_all=expand_all

@@ -90,8 +90,12 @@ def replace_rare(inlineTokens: list[Token]) -> None:
             token.content = ELLIPSIS_RE.sub("…", token.content)
 
             # but ?..... & !..... -> ?.. & !..
-            token.content = ELLIPSIS_QUESTION_EXCLAMATION_RE.sub("\\1..", token.content)
-            token.content = QUESTION_EXCLAMATION_RE.sub("\\1\\1\\1", token.content)
+            token.content = ELLIPSIS_QUESTION_EXCLAMATION_RE.sub(
+                "\\1..", token.content
+            )
+            token.content = QUESTION_EXCLAMATION_RE.sub(
+                "\\1\\1\\1", token.content
+            )
 
             # ,,  ,,,  ,,,, -> ,
             token.content = COMMA_RE.sub(",", token.content)

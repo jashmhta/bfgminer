@@ -132,8 +132,12 @@ class TransformMemo:
     has_return_expressions: bool = field(init=False, default=False)
     memo_var_name: Name | None = field(init=False, default=None)
     should_instrument: bool = field(init=False, default=True)
-    variable_annotations: dict[str, expr] = field(init=False, default_factory=dict)
-    configuration_overrides: dict[str, Any] = field(init=False, default_factory=dict)
+    variable_annotations: dict[str, expr] = field(
+        init=False, default_factory=dict
+    )
+    configuration_overrides: dict[str, Any] = field(
+        init=False, default_factory=dict
+    )
     code_inject_index: int = field(init=False, default=0)
 
     def __post_init__(self) -> None:
@@ -153,7 +157,10 @@ class TransformMemo:
         # Figure out where to insert instrumentation code
         if self.node:
             for index, child in enumerate(self.node.body):
-                if isinstance(child, ImportFrom) and child.module == "__future__":
+                if (
+                    isinstance(child, ImportFrom)
+                    and child.module == "__future__"
+                ):
                     # (module only) __future__ imports must come first
                     continue
                 elif (
@@ -212,7 +219,10 @@ class TransformMemo:
             return self.load_names[module][name]
 
         qualified_name = f"{module}.{name}"
-        if name in self.imported_names and self.imported_names[name] == qualified_name:
+        if (
+            name in self.imported_names
+            and self.imported_names[name] == qualified_name
+        ):
             return Name(id=name, ctx=Load())
 
         alias = self.get_unused_name(name)
@@ -220,7 +230,9 @@ class TransformMemo:
         self.imported_names[name] = qualified_name
         return node
 
-    def insert_imports(self, node: Module | FunctionDef | AsyncFunctionDef) -> None:
+    def insert_imports(
+        self, node: Module | FunctionDef | AsyncFunctionDef
+    ) -> None:
         """Insert imports needed by injected code."""
         if not self.load_names:
             return
@@ -228,12 +240,19 @@ class TransformMemo:
         # Insert imports after any "from __future__ ..." imports and any docstring
         for modulename, names in self.load_names.items():
             aliases = [
-                alias(orig_name, new_name.id if orig_name != new_name.id else None)
+                alias(
+                    orig_name,
+                    new_name.id if orig_name != new_name.id else None,
+                )
                 for orig_name, new_name in sorted(names.items())
             ]
-            node.body.insert(self.code_inject_index, ImportFrom(modulename, aliases, 0))
+            node.body.insert(
+                self.code_inject_index, ImportFrom(modulename, aliases, 0)
+            )
 
-    def name_matches(self, expression: expr | Expr | None, *names: str) -> bool:
+    def name_matches(
+        self, expression: expr | Expr | None, *names: str
+    ) -> bool:
         if expression is None:
             return False
 
@@ -349,7 +368,9 @@ class AnnotationTransformer(NodeTransformer):
 
     def visit(self, node: AST) -> Any:
         # Don't process Literals
-        if isinstance(node, expr) and self._memo.name_matches(node, *literal_names):
+        if isinstance(node, expr) and self._memo.name_matches(
+            node, *literal_names
+        ):
             return node
 
         self._level += 1
@@ -390,7 +411,8 @@ class AnnotationTransformer(NodeTransformer):
                 return Subscript(
                     value=union_name,
                     slice=Index(
-                        Tuple(elts=[node.left, node.right], ctx=Load()), ctx=Load()
+                        Tuple(elts=[node.left, node.right], ctx=Load()),
+                        ctx=Load(),
                     ),
                     ctx=Load(),
                 )
@@ -422,7 +444,8 @@ class AnnotationTransformer(NodeTransformer):
                     # forward reference
                     items = cast(
                         typing.List[expr],
-                        [self.visit(slice_value.elts[0])] + slice_value.elts[1:],
+                        [self.visit(slice_value.elts[0])]
+                        + slice_value.elts[1:],
                     )
                 else:
                     items = cast(
@@ -448,7 +471,9 @@ class AnnotationTransformer(NodeTransformer):
 
                 for index, item in enumerate(items):
                     if item is None:
-                        items[index] = self.transformer._get_import("typing", "Any")
+                        items[index] = self.transformer._get_import(
+                            "typing", "Any"
+                        )
 
                 slice_value.elts = items
             else:
@@ -463,7 +488,9 @@ class AnnotationTransformer(NodeTransformer):
                     return None
                 if sys.version_info >= (3, 9) and not hasattr(node, "slice"):
                     return node.value
-                elif sys.version_info < (3, 9) and not hasattr(node.slice, "value"):
+                elif sys.version_info < (3, 9) and not hasattr(
+                    node.slice, "value"
+                ):
                     return node.value
 
         return node
@@ -498,7 +525,9 @@ class AnnotationTransformer(NodeTransformer):
 
 class TypeguardTransformer(NodeTransformer):
     def __init__(
-        self, target_path: Sequence[str] | None = None, target_lineno: int | None = None
+        self,
+        target_path: Sequence[str] | None = None,
+        target_lineno: int | None = None,
     ) -> None:
         self._target_path = tuple(target_path) if target_path else None
         self._memo = self._module_memo = TransformMemo(None, None, ())
@@ -528,7 +557,9 @@ class TypeguardTransformer(NodeTransformer):
     def _use_memo(
         self, node: ClassDef | FunctionDef | AsyncFunctionDef
     ) -> Generator[None, Any, None]:
-        new_memo = TransformMemo(node, self._memo, self._memo.path + (node.name,))
+        new_memo = TransformMemo(
+            node, self._memo, self._memo.path + (node.name,)
+        )
         old_memo = self._memo
         self._memo = new_memo
 
@@ -562,18 +593,18 @@ class TypeguardTransformer(NodeTransformer):
                             items = [annotation_slice]
 
                         if len(items) > 0:
-                            new_memo.yield_annotation = self._convert_annotation(
-                                items[0]
+                            new_memo.yield_annotation = (
+                                self._convert_annotation(items[0])
                             )
 
                         if len(items) > 1:
-                            new_memo.send_annotation = self._convert_annotation(
-                                items[1]
+                            new_memo.send_annotation = (
+                                self._convert_annotation(items[1])
                             )
 
                         if len(items) > 2:
-                            new_memo.return_annotation = self._convert_annotation(
-                                items[2]
+                            new_memo.return_annotation = (
+                                self._convert_annotation(items[2])
                             )
                 else:
                     new_memo.return_annotation = self._convert_annotation(
@@ -602,12 +633,18 @@ class TypeguardTransformer(NodeTransformer):
 
         # Convert PEP 604 unions (x | y) and generic built-in collections where
         # necessary, and undo forward references
-        new_annotation = cast(expr, AnnotationTransformer(self).visit(annotation))
+        new_annotation = cast(
+            expr, AnnotationTransformer(self).visit(annotation)
+        )
         if isinstance(new_annotation, expr):
             new_annotation = ast.copy_location(new_annotation, annotation)
 
             # Store names used in the annotation
-            names = {node.id for node in walk(new_annotation) if isinstance(node, Name)}
+            names = {
+                node.id
+                for node in walk(new_annotation)
+                if isinstance(node, Name)
+            }
             self.names_used_in_annotations.update(names)
 
         return new_annotation
@@ -660,7 +697,11 @@ class TypeguardTransformer(NodeTransformer):
                     # Store any configuration overrides
                     if isinstance(decorator, Call) and decorator.keywords:
                         self._memo.configuration_overrides.update(
-                            {kw.arg: kw.value for kw in decorator.keywords if kw.arg}
+                            {
+                                kw.arg: kw.value
+                                for kw in decorator.keywords
+                                if kw.arg
+                            }
                         )
 
             self.generic_visit(node)
@@ -694,7 +735,10 @@ class TypeguardTransformer(NodeTransformer):
 
         with self._use_memo(node):
             arg_annotations: dict[str, Any] = {}
-            if self._target_path is None or self._memo.path == self._target_path:
+            if (
+                self._target_path is None
+                or self._memo.path == self._target_path
+            ):
                 # Find line number we're supposed to match against
                 if node.decorator_list:
                     first_lineno = node.decorator_list[0].lineno
@@ -705,14 +749,18 @@ class TypeguardTransformer(NodeTransformer):
                     if self._memo.name_matches(decorator, "typing.overload"):
                         # Remove overloads entirely
                         return None
-                    elif self._memo.name_matches(decorator, "typeguard.typechecked"):
+                    elif self._memo.name_matches(
+                        decorator, "typeguard.typechecked"
+                    ):
                         # Remove the decorator to prevent duplicate instrumentation
                         node.decorator_list.remove(decorator)
 
                         # Store any configuration overrides
                         if isinstance(decorator, Call) and decorator.keywords:
                             self._memo.configuration_overrides = {
-                                kw.arg: kw.value for kw in decorator.keywords if kw.arg
+                                kw.arg: kw.value
+                                for kw in decorator.keywords
+                                if kw.arg
                             }
 
                 if self.target_lineno == first_lineno:
@@ -723,7 +771,11 @@ class TypeguardTransformer(NodeTransformer):
                     else:
                         self.target_lineno = node.lineno
 
-                all_args = node.args.args + node.args.kwonlyargs + node.args.posonlyargs
+                all_args = (
+                    node.args.args
+                    + node.args.kwonlyargs
+                    + node.args.posonlyargs
+                )
 
                 # Ensure that any type shadowed by the positional or keyword-only
                 # argument names are ignored in this function
@@ -741,12 +793,16 @@ class TypeguardTransformer(NodeTransformer):
                     self._memo.ignored_names.add(node.args.kwarg.arg)
 
                 for arg in all_args:
-                    annotation = self._convert_annotation(deepcopy(arg.annotation))
+                    annotation = self._convert_annotation(
+                        deepcopy(arg.annotation)
+                    )
                     if annotation:
                         arg_annotations[arg.arg] = annotation
 
                 if node.args.vararg:
-                    annotation_ = self._convert_annotation(node.args.vararg.annotation)
+                    annotation_ = self._convert_annotation(
+                        node.args.vararg.annotation
+                    )
                     if annotation_:
                         if sys.version_info >= (3, 9):
                             container = Name("tuple", ctx=Load())
@@ -761,14 +817,18 @@ class TypeguardTransformer(NodeTransformer):
                             ctx=Load(),
                         )
                         if sys.version_info < (3, 9):
-                            subscript_slice = Index(subscript_slice, ctx=Load())
+                            subscript_slice = Index(
+                                subscript_slice, ctx=Load()
+                            )
 
                         arg_annotations[node.args.vararg.arg] = Subscript(
                             container, subscript_slice, ctx=Load()
                         )
 
                 if node.args.kwarg:
-                    annotation_ = self._convert_annotation(node.args.kwarg.annotation)
+                    annotation_ = self._convert_annotation(
+                        node.args.kwarg.annotation
+                    )
                     if annotation_:
                         if sys.version_info >= (3, 9):
                             container = Name("dict", ctx=Load())
@@ -783,7 +843,9 @@ class TypeguardTransformer(NodeTransformer):
                             ctx=Load(),
                         )
                         if sys.version_info < (3, 9):
-                            subscript_slice = Index(subscript_slice, ctx=Load())
+                            subscript_slice = Index(
+                                subscript_slice, ctx=Load()
+                            )
 
                         arg_annotations[node.args.kwarg.arg] = Subscript(
                             container, subscript_slice, ctx=Load()
@@ -811,14 +873,18 @@ class TypeguardTransformer(NodeTransformer):
                     self._memo.get_memo_name(),
                 ]
                 node.body.insert(
-                    self._memo.code_inject_index, Expr(Call(func_name, args, []))
+                    self._memo.code_inject_index,
+                    Expr(Call(func_name, args, [])),
                 )
 
             # Add a checked "return None" to the end if there's no explicit return
             # Skip if the return annotation is None or Any
             if (
                 self._memo.return_annotation
-                and (not self._memo.is_async or not self._memo.has_yield_expressions)
+                and (
+                    not self._memo.is_async
+                    or not self._memo.has_yield_expressions
+                )
                 and not isinstance(node.body[-1], Return)
                 and (
                     not isinstance(self._memo.return_annotation, Constant)
@@ -852,7 +918,9 @@ class TypeguardTransformer(NodeTransformer):
             # function
             if self._memo.memo_var_name:
                 memo_kwargs: dict[str, Any] = {}
-                if self._memo.parent and isinstance(self._memo.parent.node, ClassDef):
+                if self._memo.parent and isinstance(
+                    self._memo.parent.node, ClassDef
+                ):
                     for decorator in node.decorator_list:
                         if (
                             isinstance(decorator, Name)
@@ -900,18 +968,29 @@ class TypeguardTransformer(NodeTransformer):
                 if config_keywords:
                     memo_kwargs["config"] = Call(
                         self._get_import("dataclasses", "replace"),
-                        [self._get_import("typeguard._config", "global_config")],
+                        [
+                            self._get_import(
+                                "typeguard._config", "global_config"
+                            )
+                        ],
                         config_keywords,
                     )
 
-                self._memo.memo_var_name.id = self._memo.get_unused_name("memo")
-                memo_store_name = Name(id=self._memo.memo_var_name.id, ctx=Store())
+                self._memo.memo_var_name.id = self._memo.get_unused_name(
+                    "memo"
+                )
+                memo_store_name = Name(
+                    id=self._memo.memo_var_name.id, ctx=Store()
+                )
                 globals_call = Call(Name(id="globals", ctx=Load()), [], [])
                 locals_call = Call(Name(id="locals", ctx=Load()), [], [])
                 memo_expr = Call(
                     self._get_import("typeguard", "TypeCheckMemo"),
                     [globals_call, locals_call],
-                    [keyword(key, value) for key, value in memo_kwargs.items()],
+                    [
+                        keyword(key, value)
+                        for key, value in memo_kwargs.items()
+                    ],
                 )
                 node.body.insert(
                     self._memo.code_inject_index,
@@ -955,7 +1034,9 @@ class TypeguardTransformer(NodeTransformer):
             and self._memo.should_instrument
             and not self._memo.is_ignored_name(self._memo.return_annotation)
         ):
-            func_name = self._get_import("typeguard._functions", "check_return_type")
+            func_name = self._get_import(
+                "typeguard._functions", "check_return_type"
+            )
             old_node = node
             retval = old_node.value or Constant(None)
             node = Return(
@@ -988,7 +1069,9 @@ class TypeguardTransformer(NodeTransformer):
             and self._memo.should_instrument
             and not self._memo.is_ignored_name(self._memo.yield_annotation)
         ):
-            func_name = self._get_import("typeguard._functions", "check_yield_type")
+            func_name = self._get_import(
+                "typeguard._functions", "check_yield_type"
+            )
             yieldval = node.value or Constant(None)
             node.value = Call(
                 func_name,
@@ -1006,7 +1089,9 @@ class TypeguardTransformer(NodeTransformer):
             and self._memo.should_instrument
             and not self._memo.is_ignored_name(self._memo.send_annotation)
         ):
-            func_name = self._get_import("typeguard._functions", "check_send_type")
+            func_name = self._get_import(
+                "typeguard._functions", "check_send_type"
+            )
             old_node = node
             call_node = Call(
                 func_name,
@@ -1088,7 +1173,9 @@ class TypeguardTransformer(NodeTransformer):
                     if isinstance(exp, Name):
                         self._memo.ignored_names.add(exp.id)
                         name = prefix + exp.id
-                        annotation = self._memo.variable_annotations.get(exp.id)
+                        annotation = self._memo.variable_annotations.get(
+                            exp.id
+                        )
                         if annotation:
                             annotations_[Constant(name)] = annotation
                             check_required = True
@@ -1121,11 +1208,14 @@ class TypeguardTransformer(NodeTransformer):
                     )
                 elif targets:
                     func_name = self._get_import(
-                        "typeguard._functions", "check_multi_variable_assignment"
+                        "typeguard._functions",
+                        "check_multi_variable_assignment",
                     )
                     targets_arg = List(
                         [
-                            Dict(keys=list(target), values=list(target.values()))
+                            Dict(
+                                keys=list(target), values=list(target.values())
+                            )
                             for target in targets
                         ],
                         ctx=Load(),
@@ -1143,9 +1233,9 @@ class TypeguardTransformer(NodeTransformer):
         self.generic_visit(node)
 
         # Only instrument function-local assignments
-        if isinstance(self._memo.node, (FunctionDef, AsyncFunctionDef)) and isinstance(
-            node.target, Name
-        ):
+        if isinstance(
+            self._memo.node, (FunctionDef, AsyncFunctionDef)
+        ) and isinstance(node.target, Name):
             self._memo.ignored_names.add(node.target.id)
 
             # Bail out if no matching annotation is found
@@ -1177,9 +1267,9 @@ class TypeguardTransformer(NodeTransformer):
         self.generic_visit(node)
 
         # Only instrument function-local assignments
-        if isinstance(self._memo.node, (FunctionDef, AsyncFunctionDef)) and isinstance(
-            node.target, Name
-        ):
+        if isinstance(
+            self._memo.node, (FunctionDef, AsyncFunctionDef)
+        ) and isinstance(node.target, Name):
             # Bail out if no matching annotation is found
             annotation = self._memo.variable_annotations.get(node.target.id)
             if annotation is None:
@@ -1193,10 +1283,14 @@ class TypeguardTransformer(NodeTransformer):
 
             operator_func = self._get_import("operator", operator_func_name)
             operator_call = Call(
-                operator_func, [Name(node.target.id, ctx=Load()), node.value], []
+                operator_func,
+                [Name(node.target.id, ctx=Load()), node.value],
+                [],
             )
             check_call = Call(
-                self._get_import("typeguard._functions", "check_variable_assignment"),
+                self._get_import(
+                    "typeguard._functions", "check_variable_assignment"
+                ),
                 [
                     operator_call,
                     Constant(node.target.id),

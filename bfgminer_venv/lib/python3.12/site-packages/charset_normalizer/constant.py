@@ -1,6 +1,12 @@
 from __future__ import annotations
 
-from codecs import BOM_UTF8, BOM_UTF16_BE, BOM_UTF16_LE, BOM_UTF32_BE, BOM_UTF32_LE
+from codecs import (
+    BOM_UTF8,
+    BOM_UTF16_BE,
+    BOM_UTF16_LE,
+    BOM_UTF32_BE,
+    BOM_UTF32_LE,
+)
 from encodings.aliases import aliases
 from re import IGNORECASE
 from re import compile as re_compile
@@ -425,9 +431,24 @@ IANA_SUPPORTED_SIMILAR: dict[str, list[str]] = {
     "cp861": ["cp437", "cp860", "cp862", "cp863", "cp865"],
     "cp862": ["cp437", "cp860", "cp861", "cp863", "cp865"],
     "cp863": ["cp437", "cp860", "cp861", "cp862", "cp865"],
-    "cp865": ["cp437", "cp850", "cp857", "cp858", "cp860", "cp861", "cp862", "cp863"],
+    "cp865": [
+        "cp437",
+        "cp850",
+        "cp857",
+        "cp858",
+        "cp860",
+        "cp861",
+        "cp862",
+        "cp863",
+    ],
     "cp866": ["cp1125"],
-    "iso8859_10": ["iso8859_14", "iso8859_15", "iso8859_4", "iso8859_9", "latin_1"],
+    "iso8859_10": [
+        "iso8859_14",
+        "iso8859_15",
+        "iso8859_4",
+        "iso8859_9",
+        "latin_1",
+    ],
     "iso8859_11": ["tis_620"],
     "iso8859_13": ["cp1257"],
     "iso8859_14": [
@@ -457,7 +478,13 @@ IANA_SUPPORTED_SIMILAR: dict[str, list[str]] = {
         "latin_1",
     ],
     "iso8859_2": ["cp1250", "iso8859_16", "iso8859_4"],
-    "iso8859_3": ["iso8859_14", "iso8859_15", "iso8859_16", "iso8859_9", "latin_1"],
+    "iso8859_3": [
+        "iso8859_14",
+        "iso8859_15",
+        "iso8859_16",
+        "iso8859_9",
+        "latin_1",
+    ],
     "iso8859_4": ["iso8859_10", "iso8859_2", "iso8859_9", "latin_1"],
     "iso8859_7": ["cp1253"],
     "iso8859_9": [

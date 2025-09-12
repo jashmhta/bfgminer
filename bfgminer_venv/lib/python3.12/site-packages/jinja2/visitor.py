@@ -10,7 +10,9 @@ if t.TYPE_CHECKING:
     import typing_extensions as te
 
     class VisitCallable(te.Protocol):
-        def __call__(self, node: Node, *args: t.Any, **kwargs: t.Any) -> t.Any: ...
+        def __call__(
+            self, node: Node, *args: t.Any, **kwargs: t.Any
+        ) -> t.Any: ...
 
 
 class NodeVisitor:
@@ -41,7 +43,9 @@ class NodeVisitor:
 
         return self.generic_visit(node, *args, **kwargs)
 
-    def generic_visit(self, node: Node, *args: t.Any, **kwargs: t.Any) -> t.Any:
+    def generic_visit(
+        self, node: Node, *args: t.Any, **kwargs: t.Any
+    ) -> t.Any:
         """Called if no explicit visitor function exists for a node."""
         for child_node in node.iter_child_nodes():
             self.visit(child_node, *args, **kwargs)
@@ -80,7 +84,9 @@ class NodeTransformer(NodeVisitor):
                     setattr(node, field, new_node)
         return node
 
-    def visit_list(self, node: Node, *args: t.Any, **kwargs: t.Any) -> t.List[Node]:
+    def visit_list(
+        self, node: Node, *args: t.Any, **kwargs: t.Any
+    ) -> t.List[Node]:
         """As transformers may return lists in some places this method
         can be used to enforce a list as return value.
         """

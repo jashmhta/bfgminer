@@ -42,7 +42,9 @@ class Log(logging.Logger):
     """distutils.log.Log is deprecated, please use an alternative from `logging`."""
 
     def __init__(self, threshold=WARN):
-        warnings.warn(Log.__doc__)  # avoid DeprecationWarning to ensure warn is shown
+        warnings.warn(
+            Log.__doc__
+        )  # avoid DeprecationWarning to ensure warn is shown
         super().__init__(__name__, level=threshold)
 
     @property

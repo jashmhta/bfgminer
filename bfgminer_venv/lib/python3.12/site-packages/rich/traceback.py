@@ -28,7 +28,13 @@ from pygments.util import ClassNotFound
 from . import pretty
 from ._loop import loop_last
 from .columns import Columns
-from .console import Console, ConsoleOptions, ConsoleRenderable, RenderResult, group
+from .console import (
+    Console,
+    ConsoleOptions,
+    ConsoleRenderable,
+    RenderResult,
+    group,
+)
 from .constrain import Constrain
 from .highlighter import RegexHighlighter, ReprHighlighter
 from .panel import Panel
@@ -60,7 +66,9 @@ def install(
     indent_guides: bool = True,
     suppress: Iterable[Union[str, ModuleType]] = (),
     max_frames: int = 100,
-) -> Callable[[Type[BaseException], BaseException, Optional[TracebackType]], Any]:
+) -> Callable[
+    [Type[BaseException], BaseException, Optional[TracebackType]], Any
+]:
     """Install a rich traceback handler.
 
     Once installed, any tracebacks will be printed with syntax highlighting and rich formatting.
@@ -123,7 +131,9 @@ def install(
 
     def ipy_excepthook_closure(ip: Any) -> None:  # pragma: no cover
         tb_data = {}  # store information about showtraceback call
-        default_showtraceback = ip.showtraceback  # keep reference of default traceback
+        default_showtraceback = (
+            ip.showtraceback
+        )  # keep reference of default traceback
 
         def ipy_show_traceback(*args: Any, **kwargs: Any) -> None:
             """wrap the default ip.showtraceback to store info for ip._showtraceback"""
@@ -430,7 +440,7 @@ class Traceback:
             append = stack.frames.append
 
             def get_locals(
-                iter_locals: Iterable[Tuple[str, object]]
+                iter_locals: Iterable[Tuple[str, object]],
             ) -> Iterable[Tuple[str, object]]:
                 """Extract locals from an iterator of key pairs."""
                 if not (locals_hide_dunder or locals_hide_sunder):
@@ -446,7 +456,9 @@ class Traceback:
             for frame_summary, line_no in walk_tb(traceback):
                 filename = frame_summary.f_code.co_filename
 
-                last_instruction: Optional[Tuple[Tuple[int, int], Tuple[int, int]]]
+                last_instruction: Optional[
+                    Tuple[Tuple[int, int], Tuple[int, int]]
+                ]
                 last_instruction = None
                 if sys.version_info >= (3, 11):
                     instruction_index = frame_summary.f_lasti // 2
@@ -491,8 +503,13 @@ class Traceback:
                                 max_length=locals_max_length,
                                 max_string=locals_max_string,
                             )
-                            for key, value in get_locals(frame_summary.f_locals.items())
-                            if not (inspect.isfunction(value) or inspect.isclass(value))
+                            for key, value in get_locals(
+                                frame_summary.f_locals.items()
+                            )
+                            if not (
+                                inspect.isfunction(value)
+                                or inspect.isclass(value)
+                            )
                         }
                         if show_locals
                         else None
@@ -550,7 +567,8 @@ class Traceback:
                 "scope.border": token_style(String.Delimiter),
                 "scope.equals": token_style(Operator),
                 "scope.key": token_style(Name),
-                "scope.key.special": token_style(Name.Constant) + Style(dim=True),
+                "scope.key.special": token_style(Name.Constant)
+                + Style(dim=True),
             },
             inherit=False,
         )
@@ -592,7 +610,9 @@ class Traceback:
                     highlighter(stack.exc_value),
                 )
             else:
-                yield Text.assemble((f"{stack.exc_type}", "traceback.exc_type"))
+                yield Text.assemble(
+                    (f"{stack.exc_type}", "traceback.exc_type")
+                )
 
             if not last:
                 if stack.is_cause:
@@ -635,11 +655,16 @@ class Traceback:
             # Note, this is an educated guess and not a guarantee
             # If it fails, the only downside is that the code is highlighted strangely
             new_line_index = code.index("\n")
-            first_line = code[:new_line_index] if new_line_index != -1 else code
+            first_line = (
+                code[:new_line_index] if new_line_index != -1 else code
+            )
             if first_line.startswith("#!") and "python" in first_line.lower():
                 return "python"
         try:
-            return cls.LEXERS.get(ext) or guess_lexer_for_filename(filename, code).name
+            return (
+                cls.LEXERS.get(ext)
+                or guess_lexer_for_filename(filename, code).name
+            )
         except ClassNotFound:
             return "text"
 
@@ -693,11 +718,15 @@ class Traceback:
 
             first = frame_index == 0
             frame_filename = frame.filename
-            suppressed = any(frame_filename.startswith(path) for path in self.suppress)
+            suppressed = any(
+                frame_filename.startswith(path) for path in self.suppress
+            )
 
             if os.path.exists(frame.filename):
                 text = Text.assemble(
-                    path_highlighter(Text(frame.filename, style="pygments.string")),
+                    path_highlighter(
+                        Text(frame.filename, style="pygments.string")
+                    ),
                     (":", "pygments.text"),
                     (str(frame.lineno), "pygments.number"),
                     " in ",

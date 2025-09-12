@@ -9,7 +9,9 @@ from email.parser import BytesParser
 from wheel.cli import WheelError
 from wheel.wheelfile import WheelFile
 
-DIST_INFO_RE = re.compile(r"^(?P<namever>(?P<name>.+?)-(?P<ver>\d.*?))\.dist-info$")
+DIST_INFO_RE = re.compile(
+    r"^(?P<namever>(?P<name>.+?)-(?P<ver>\d.*?))\.dist-info$"
+)
 
 
 def pack(directory: str, dest_dir: str, build_number: str | None) -> None:
@@ -25,10 +27,13 @@ def pack(directory: str, dest_dir: str, build_number: str | None) -> None:
     dist_info_dirs = [
         fn
         for fn in os.listdir(directory)
-        if os.path.isdir(os.path.join(directory, fn)) and DIST_INFO_RE.match(fn)
+        if os.path.isdir(os.path.join(directory, fn))
+        and DIST_INFO_RE.match(fn)
     ]
     if len(dist_info_dirs) > 1:
-        raise WheelError(f"Multiple .dist-info directories found in {directory}")
+        raise WheelError(
+            f"Multiple .dist-info directories found in {directory}"
+        )
     elif not dist_info_dirs:
         raise WheelError(f"No .dist-info directories found in {directory}")
 
@@ -50,7 +55,9 @@ def pack(directory: str, dest_dir: str, build_number: str | None) -> None:
             )
 
     # Set the wheel file name and add/replace/remove the Build tag in .dist-info/WHEEL
-    build_number = build_number if build_number is not None else existing_build_number
+    build_number = (
+        build_number if build_number is not None else existing_build_number
+    )
     if build_number is not None:
         del info["Build"]
         if build_number:

@@ -24,7 +24,9 @@ def entity(state: StateInline, silent: bool) -> bool:
             if not silent:
                 match1 = match.group(1)
                 code = (
-                    int(match1[1:], 16) if match1[0].lower() == "x" else int(match1, 10)
+                    int(match1[1:], 16)
+                    if match1[0].lower() == "x"
+                    else int(match1, 10)
                 )
 
                 token = state.push("text_special", "", 0)
@@ -40,7 +42,9 @@ def entity(state: StateInline, silent: bool) -> bool:
             return True
 
     else:
-        if (match := NAMED_RE.search(state.src[pos:])) and match.group(1) in entities:
+        if (match := NAMED_RE.search(state.src[pos:])) and match.group(
+            1
+        ) in entities:
             if not silent:
                 token = state.push("text_special", "", 0)
                 token.content = entities[match.group(1)]

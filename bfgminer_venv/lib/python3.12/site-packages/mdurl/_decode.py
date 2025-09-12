@@ -87,7 +87,11 @@ def repl_func_with_cache(match: re.Match, cache: Sequence[str]) -> str:
             b3 = int(seq[i + 7 : i + 9], 16)
             b4 = int(seq[i + 10 : i + 12], 16)
 
-            if (b2 & 0xC0) == 0x80 and (b3 & 0xC0) == 0x80 and (b4 & 0xC0) == 0x80:
+            if (
+                (b2 & 0xC0) == 0x80
+                and (b3 & 0xC0) == 0x80
+                and (b4 & 0xC0) == 0x80
+            ):
                 all_bytes = bytes((b1, b2, b3, b4))
                 try:
                     result += all_bytes.decode()

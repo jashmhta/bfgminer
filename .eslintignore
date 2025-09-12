@@ -1,0 +1,4 @@
+bfgminer_venv/
+node_modules/
+.eslintrc.js
+*.py

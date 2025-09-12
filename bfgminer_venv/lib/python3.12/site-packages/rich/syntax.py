@@ -155,7 +155,9 @@ class PygmentsSyntaxTheme(SyntaxTheme):
             return self._style_cache[token_type]
         except KeyError:
             try:
-                pygments_style = self._pygments_style_class.style_for_token(token_type)
+                pygments_style = self._pygments_style_class.style_for_token(
+                    token_type
+                )
             except KeyError:
                 style = Style.null()
             else:
@@ -163,7 +165,9 @@ class PygmentsSyntaxTheme(SyntaxTheme):
                 bgcolor = pygments_style["bgcolor"]
                 style = Style(
                     color="#" + color if color else "#000000",
-                    bgcolor="#" + bgcolor if bgcolor else self._background_color,
+                    bgcolor=(
+                        "#" + bgcolor if bgcolor else self._background_color
+                    ),
                     bold=pygments_style["bold"],
                     italic=pygments_style["italic"],
                     underline=pygments_style["underline"],
@@ -405,7 +409,9 @@ class Syntax(JupyterMixin):
 
     def _get_base_style(self) -> Style:
         """Get the base style."""
-        default_style = self._theme.get_background_style() + self.background_style
+        default_style = (
+            self._theme.get_background_style() + self.background_style
+        )
         return default_style
 
     def _get_token_color(self, token_type: TokenType) -> Optional[Color]:
@@ -556,7 +562,9 @@ class Syntax(JupyterMixin):
         )
 
     def _get_line_numbers_color(self, blend: float = 0.3) -> Color:
-        background_style = self._theme.get_background_style() + self.background_style
+        background_style = (
+            self._theme.get_background_style() + self.background_style
+        )
         background_color = background_style.bgcolor
         if background_color is None or background_color.is_system_defined:
             return Color.default()
@@ -581,7 +589,9 @@ class Syntax(JupyterMixin):
             )
         return column_width
 
-    def _get_number_styles(self, console: Console) -> Tuple[Style, Style, Style]:
+    def _get_number_styles(
+        self, console: Console
+    ) -> Tuple[Style, Style, Style]:
         """Get background, number, and highlight styles for line numbers."""
         background_style = self._get_base_style()
         if background_style.transparent_background:
@@ -627,7 +637,9 @@ class Syntax(JupyterMixin):
     ) -> RenderResult:
         segments = Segments(self._get_syntax(console, options))
         if self.padding:
-            yield Padding(segments, style=self._get_base_style(), pad=self.padding)
+            yield Padding(
+                segments, style=self._get_base_style(), pad=self.padding
+            )
         else:
             yield segments
 
@@ -653,7 +665,11 @@ class Syntax(JupyterMixin):
         ends_on_nl, processed_code = self._process_code(self.code)
         text = self.highlight(processed_code, self.line_range)
 
-        if not self.line_numbers and not self.word_wrap and not self.line_range:
+        if (
+            not self.line_numbers
+            and not self.word_wrap
+            and not self.line_range
+        ):
             if not ends_on_nl:
                 text.remove_suffix("\n")
             # Simple case of just rendering text
@@ -673,7 +689,9 @@ class Syntax(JupyterMixin):
             else:
                 syntax_lines = console.render_lines(
                     text,
-                    options.update(width=code_width, height=None, justify="left"),
+                    options.update(
+                        width=code_width, height=None, justify="left"
+                    ),
                     style=self.background_style,
                     pad=True,
                     new_lines=True,
@@ -686,7 +704,9 @@ class Syntax(JupyterMixin):
         line_offset = 0
         if start_line:
             line_offset = max(0, start_line - 1)
-        lines: Union[List[Text], Lines] = text.split("\n", allow_blank=ends_on_nl)
+        lines: Union[List[Text], Lines] = text.split(
+            "\n", allow_blank=ends_on_nl
+        )
         if self.line_range:
             if line_offset > len(lines):
                 return
@@ -702,7 +722,9 @@ class Syntax(JupyterMixin):
             lines = (
                 Text("\n")
                 .join(lines)
-                .with_indent_guides(self.tab_size, style=style + Style(italic=False))
+                .with_indent_guides(
+                    self.tab_size, style=style + Style(italic=False)
+                )
                 .split("\n", allow_blank=True)
             )
 
@@ -749,7 +771,9 @@ class Syntax(JupyterMixin):
                 )
                 for first, wrapped_line in loop_first(wrapped_lines):
                     if first:
-                        line_column = str(line_no).rjust(numbers_column_width - 2) + " "
+                        line_column = (
+                            str(line_no).rjust(numbers_column_width - 2) + " "
+                        )
                         if highlight_line(line_no):
                             yield _Segment(line_pointer, Style(color="red"))
                             yield _Segment(line_column, highlight_number_style)
@@ -840,7 +864,9 @@ def _get_code_index_for_syntax_position(
     if line_number > lines_count or len(newlines_offsets) < (line_number + 1):
         return None  # `line_number` is out of range
     line_index = line_number - 1
-    line_length = newlines_offsets[line_index + 1] - newlines_offsets[line_index] - 1
+    line_length = (
+        newlines_offsets[line_index + 1] - newlines_offsets[line_index] - 1
+    )
     # If `column_index` is out of range: let's silently clamp it:
     column_index = min(line_length, column_index)
     return newlines_offsets[line_index] + column_index

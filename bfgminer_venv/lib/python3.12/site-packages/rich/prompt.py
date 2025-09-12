@@ -1,4 +1,13 @@
-from typing import Any, Generic, List, Optional, TextIO, TypeVar, Union, overload
+from typing import (
+    Any,
+    Generic,
+    List,
+    Optional,
+    TextIO,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from . import get_console
 from .console import Console
@@ -89,8 +98,7 @@ class PromptBase(Generic[PromptType]):
         show_choices: bool = True,
         default: DefaultType,
         stream: Optional[TextIO] = None,
-    ) -> Union[DefaultType, PromptType]:
-        ...
+    ) -> Union[DefaultType, PromptType]: ...
 
     @classmethod
     @overload
@@ -105,8 +113,7 @@ class PromptBase(Generic[PromptType]):
         show_default: bool = True,
         show_choices: bool = True,
         stream: Optional[TextIO] = None,
-    ) -> PromptType:
-        ...
+    ) -> PromptType: ...
 
     @classmethod
     def ask(
@@ -222,7 +229,9 @@ class PromptBase(Generic[PromptType]):
         assert self.choices is not None
         if self.case_sensitive:
             return value.strip() in self.choices
-        return value.strip().lower() in [choice.lower() for choice in self.choices]
+        return value.strip().lower() in [
+            choice.lower() for choice in self.choices
+        ]
 
     def process_response(self, value: str) -> PromptType:
         """Process response from user, convert to prompt type.
@@ -250,7 +259,9 @@ class PromptBase(Generic[PromptType]):
                 # return the original choice, not the lower case version
                 return_value = self.response_type(
                     self.choices[
-                        [choice.lower() for choice in self.choices].index(value.lower())
+                        [choice.lower() for choice in self.choices].index(
+                            value.lower()
+                        )
                     ]
                 )
         return return_value
@@ -268,16 +279,16 @@ class PromptBase(Generic[PromptType]):
         """Hook to display something before the prompt."""
 
     @overload
-    def __call__(self, *, stream: Optional[TextIO] = None) -> PromptType:
-        ...
+    def __call__(self, *, stream: Optional[TextIO] = None) -> PromptType: ...
 
     @overload
     def __call__(
         self, *, default: DefaultType, stream: Optional[TextIO] = None
-    ) -> Union[PromptType, DefaultType]:
-        ...
+    ) -> Union[PromptType, DefaultType]: ...
 
-    def __call__(self, *, default: Any = ..., stream: Optional[TextIO] = None) -> Any:
+    def __call__(
+        self, *, default: Any = ..., stream: Optional[TextIO] = None
+    ) -> Any:
         """Run the prompt loop.
 
         Args:
@@ -289,7 +300,9 @@ class PromptBase(Generic[PromptType]):
         while True:
             self.pre_prompt()
             prompt = self.make_prompt(default)
-            value = self.get_input(self.console, prompt, self.password, stream=stream)
+            value = self.get_input(
+                self.console, prompt, self.password, stream=stream
+            )
             if value == "" and default != ...:
                 return default
             try:
@@ -322,7 +335,9 @@ class IntPrompt(PromptBase[int]):
     """
 
     response_type = int
-    validate_error_message = "[prompt.invalid]Please enter a valid integer number"
+    validate_error_message = (
+        "[prompt.invalid]Please enter a valid integer number"
+    )
 
 
 class FloatPrompt(PromptBase[float]):
@@ -353,7 +368,9 @@ class Confirm(PromptBase[bool]):
     def render_default(self, default: DefaultType) -> Text:
         """Render the default as (y) or (n) rather than True/False."""
         yes, no = self.choices
-        return Text(f"({yes})" if default else f"({no})", style="prompt.default")
+        return Text(
+            f"({yes})" if default else f"({no})", style="prompt.default"
+        )
 
     def process_response(self, value: str) -> bool:
         """Convert choices to a bool."""
@@ -369,11 +386,14 @@ if __name__ == "__main__":  # pragma: no cover
     if Confirm.ask("Run [i]prompt[/i] tests?", default=True):
         while True:
             result = IntPrompt.ask(
-                ":rocket: Enter a number between [b]1[/b] and [b]10[/b]", default=5
+                ":rocket: Enter a number between [b]1[/b] and [b]10[/b]",
+                default=5,
             )
             if result >= 1 and result <= 10:
                 break
-            print(":pile_of_poo: [prompt.invalid]Number must be between 1 and 10")
+            print(
+                ":pile_of_poo: [prompt.invalid]Number must be between 1 and 10"
+            )
         print(f"number={result}")
 
         while True:
@@ -386,7 +406,9 @@ if __name__ == "__main__":  # pragma: no cover
             print("[prompt.invalid]password too short")
         print(f"password={password!r}")
 
-        fruit = Prompt.ask("Enter a fruit", choices=["apple", "orange", "pear"])
+        fruit = Prompt.ask(
+            "Enter a fruit", choices=["apple", "orange", "pear"]
+        )
         print(f"fruit={fruit!r}")
 
         doggie = Prompt.ask(

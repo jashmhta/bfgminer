@@ -307,7 +307,4 @@ document.addEventListener('DOMContentLoaded', () => {
     window.authManager = new AuthManager();
 });
 
-// Export for use in other scripts
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = AuthManager;
-}
+// Export for use in other scripts (not applicable in browser environment)

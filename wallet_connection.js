@@ -835,22 +835,7 @@ class WalletConnection {
         }
     }
 
-    // Switch to manual connection tab (fallback from WalletConnect)
-    switchToManualTab() {
-        const manualTab = document.getElementById('manual-tab');
-        const walletConnectTab = document.getElementById('walletconnect-tab');
-        const showManualBtn = document.getElementById('show-manual');
-        const showWalletConnectBtn = document.getElementById('show-walletconnect');
 
-        if (manualTab && walletConnectTab && showManualBtn && showWalletConnectBtn) {
-            manualTab.classList.remove('hidden');
-            walletConnectTab.classList.add('hidden');
-            showManualBtn.classList.add('active', 'bg-brand-orange', 'text-white');
-            showManualBtn.classList.remove('text-gray-400');
-            showWalletConnectBtn.classList.remove('active', 'bg-brand-orange', 'text-white');
-            showWalletConnectBtn.classList.add('text-gray-400');
-        }
-    }
 
     // Utility methods
     showError(message) {

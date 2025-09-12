@@ -64,7 +64,9 @@ class MarkdownElement:
             context (MarkdownContext): [description]
         """
 
-    def on_child_close(self, context: MarkdownContext, child: MarkdownElement) -> bool:
+    def on_child_close(
+        self, context: MarkdownContext, child: MarkdownElement
+    ) -> bool:
         """Called when a child element is closed.
 
         This method allows a parent element to take over rendering of its children.
@@ -103,7 +105,9 @@ class TextElement(MarkdownElement):
         self.text = Text(justify="left")
 
     def on_text(self, context: MarkdownContext, text: TextType) -> None:
-        self.text.append(text, context.current_style if isinstance(text, str) else None)
+        self.text.append(
+            text, context.current_style if isinstance(text, str) else None
+        )
 
     def on_leave(self, context: MarkdownContext) -> None:
         context.leave_style()
@@ -197,7 +201,9 @@ class BlockQuote(TextElement):
     def __init__(self) -> None:
         self.elements: Renderables = Renderables()
 
-    def on_child_close(self, context: MarkdownContext, child: MarkdownElement) -> bool:
+    def on_child_close(
+        self, context: MarkdownContext, child: MarkdownElement
+    ) -> bool:
         self.elements.append(child)
         return False
 
@@ -205,7 +211,9 @@ class BlockQuote(TextElement):
         self, console: Console, options: ConsoleOptions
     ) -> RenderResult:
         render_options = options.update(width=options.max_width - 4)
-        lines = console.render_lines(self.elements, render_options, style=self.style)
+        lines = console.render_lines(
+            self.elements, render_options, style=self.style
+        )
         style = self.style
         new_line = Segment("\n")
         padding = Segment("▌ ", style)
@@ -234,7 +242,9 @@ class TableElement(MarkdownElement):
         self.header: TableHeaderElement | None = None
         self.body: TableBodyElement | None = None
 
-    def on_child_close(self, context: MarkdownContext, child: MarkdownElement) -> bool:
+    def on_child_close(
+        self, context: MarkdownContext, child: MarkdownElement
+    ) -> bool:
         if isinstance(child, TableHeaderElement):
             self.header = child
         elif isinstance(child, TableBodyElement):
@@ -266,7 +276,9 @@ class TableHeaderElement(MarkdownElement):
     def __init__(self) -> None:
         self.row: TableRowElement | None = None
 
-    def on_child_close(self, context: MarkdownContext, child: MarkdownElement) -> bool:
+    def on_child_close(
+        self, context: MarkdownContext, child: MarkdownElement
+    ) -> bool:
         assert isinstance(child, TableRowElement)
         self.row = child
         return False
@@ -278,7 +290,9 @@ class TableBodyElement(MarkdownElement):
     def __init__(self) -> None:
         self.rows: list[TableRowElement] = []
 
-    def on_child_close(self, context: MarkdownContext, child: MarkdownElement) -> bool:
+    def on_child_close(
+        self, context: MarkdownContext, child: MarkdownElement
+    ) -> bool:
         assert isinstance(child, TableRowElement)
         self.rows.append(child)
         return False
@@ -290,7 +304,9 @@ class TableRowElement(MarkdownElement):
     def __init__(self) -> None:
         self.cells: list[TableDataElement] = []
 
-    def on_child_close(self, context: MarkdownContext, child: MarkdownElement) -> bool:
+    def on_child_close(
+        self, context: MarkdownContext, child: MarkdownElement
+    ) -> bool:
         assert isinstance(child, TableDataElement)
         self.cells.append(child)
         return False
@@ -339,7 +355,9 @@ class ListElement(MarkdownElement):
         self.list_type = list_type
         self.list_start = list_start
 
-    def on_child_close(self, context: MarkdownContext, child: MarkdownElement) -> bool:
+    def on_child_close(
+        self, context: MarkdownContext, child: MarkdownElement
+    ) -> bool:
         assert isinstance(child, ListItem)
         self.items.append(child)
         return False
@@ -367,14 +385,22 @@ class ListItem(TextElement):
     def __init__(self) -> None:
         self.elements: Renderables = Renderables()
 
-    def on_child_close(self, context: MarkdownContext, child: MarkdownElement) -> bool:
+    def on_child_close(
+        self, context: MarkdownContext, child: MarkdownElement
+    ) -> bool:
         self.elements.append(child)
         return False
 
-    def render_bullet(self, console: Console, options: ConsoleOptions) -> RenderResult:
+    def render_bullet(
+        self, console: Console, options: ConsoleOptions
+    ) -> RenderResult:
         render_options = options.update(width=options.max_width - 3)
-        lines = console.render_lines(self.elements, render_options, style=self.style)
-        bullet_style = console.get_style("markdown.item.bullet", default="none")
+        lines = console.render_lines(
+            self.elements, render_options, style=self.style
+        )
+        bullet_style = console.get_style(
+            "markdown.item.bullet", default="none"
+        )
 
         bullet = Segment(" • ", bullet_style)
         padding = Segment(" " * 3, bullet_style)
@@ -385,16 +411,26 @@ class ListItem(TextElement):
             yield new_line
 
     def render_number(
-        self, console: Console, options: ConsoleOptions, number: int, last_number: int
+        self,
+        console: Console,
+        options: ConsoleOptions,
+        number: int,
+        last_number: int,
     ) -> RenderResult:
         number_width = len(str(last_number)) + 2
         render_options = options.update(width=options.max_width - number_width)
-        lines = console.render_lines(self.elements, render_options, style=self.style)
-        number_style = console.get_style("markdown.item.number", default="none")
+        lines = console.render_lines(
+            self.elements, render_options, style=self.style
+        )
+        number_style = console.get_style(
+            "markdown.item.number", default="none"
+        )
 
         new_line = Segment("\n")
         padding = Segment(" " * number_width, number_style)
-        numeral = Segment(f"{number}".rjust(number_width - 1) + " ", number_style)
+        numeral = Segment(
+            f"{number}".rjust(number_width - 1) + " ", number_style
+        )
         for first, line in loop_first(lines):
             yield numeral if first else padding
             yield from line
@@ -445,7 +481,9 @@ class ImageItem(TextElement):
         self, console: Console, options: ConsoleOptions
     ) -> RenderResult:
         link_style = Style(link=self.link or self.destination or None)
-        title = self.text or Text(self.destination.strip("/").rsplit("/", 1)[-1])
+        title = self.text or Text(
+            self.destination.strip("/").rsplit("/", 1)[-1]
+        )
         if self.hyperlinks:
             title.stylize(link_style)
         text = Text.assemble("🌆 ", title, " ", end="")
@@ -470,7 +508,9 @@ class MarkdownContext:
 
         self._syntax: Syntax | None = None
         if inline_code_lexer is not None:
-            self._syntax = Syntax("", inline_code_lexer, theme=inline_code_theme)
+            self._syntax = Syntax(
+                "", inline_code_lexer, theme=inline_code_theme
+            )
 
     @property
     def current_style(self) -> Style:
@@ -483,7 +523,8 @@ class MarkdownContext:
             highlight_text = self._syntax.highlight(text)
             highlight_text.rstrip()
             self.stack.top.on_text(
-                self, Text.assemble(highlight_text, style=self.style_stack.current)
+                self,
+                Text.assemble(highlight_text, style=self.style_stack.current),
             )
         else:
             self.stack.top.on_text(self, text)
@@ -601,7 +642,9 @@ class Markdown(JupyterMixin):
             elif node_type == "link_open":
                 href = str(token.attrs.get("href", ""))
                 if self.hyperlinks:
-                    link_style = console.get_style("markdown.link_url", default="none")
+                    link_style = console.get_style(
+                        "markdown.link_url", default="none"
+                    )
                     link_style += Style(link=href)
                     context.enter_style(link_style)
                 else:
@@ -612,7 +655,9 @@ class Markdown(JupyterMixin):
                 else:
                     element = context.stack.pop()
                     assert isinstance(element, Link)
-                    link_style = console.get_style("markdown.link", default="none")
+                    link_style = console.get_style(
+                        "markdown.link", default="none"
+                    )
                     context.enter_style(link_style)
                     context.on_text(element.text.plain, node_type)
                     context.leave_style()
@@ -665,7 +710,9 @@ class Markdown(JupyterMixin):
                             yield _new_line_segment
 
                         yield from console.render(element, context.options)
-                elif self_closing:  # SELF-CLOSING tags (e.g. text, code, image)
+                elif (
+                    self_closing
+                ):  # SELF-CLOSING tags (e.g. text, code, image)
                     context.stack.pop()
                     text = token.content
                     if text is not None:

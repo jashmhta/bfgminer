@@ -12,7 +12,9 @@ LOGGER = logging.getLogger(__name__)
 
 
 def hr(state: StateBlock, startLine: int, endLine: int, silent: bool) -> bool:
-    LOGGER.debug("entering hr: %s, %s, %s, %s", state, startLine, endLine, silent)
+    LOGGER.debug(
+        "entering hr: %s, %s, %s, %s", state, startLine, endLine, silent
+    )
 
     pos = state.bMarks[startLine] + state.tShift[startLine]
     maximum = state.eMarks[startLine]

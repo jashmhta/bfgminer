@@ -26,7 +26,7 @@ class build_clib(orig.build_clib):
 
     def build_libraries(self, libraries) -> None:
         for lib_name, build_info in libraries:
-            sources = build_info.get('sources')
+            sources = build_info.get("sources")
             if sources is None or not isinstance(sources, (list, tuple)):
                 raise DistutilsSetupError(
                     f"in 'libraries' option (library '{lib_name}'), "
@@ -40,7 +40,7 @@ class build_clib(orig.build_clib):
             # Make sure everything is the correct type.
             # obj_deps should be a dictionary of keys as sources
             # and a list/tuple of files that are its dependencies.
-            obj_deps = build_info.get('obj_deps', dict())
+            obj_deps = build_info.get("obj_deps", dict())
             if not isinstance(obj_deps, dict):
                 raise DistutilsSetupError(
                     f"in 'libraries' option (library '{lib_name}'), "
@@ -51,7 +51,7 @@ class build_clib(orig.build_clib):
 
             # Get the global dependencies that are specified by the '' key.
             # These will go into every source's dependency list.
-            global_deps = obj_deps.get('', list())
+            global_deps = obj_deps.get("", list())
             if not isinstance(global_deps, (list, tuple)):
                 raise DistutilsSetupError(
                     f"in 'libraries' option (library '{lib_name}'), "
@@ -79,13 +79,16 @@ class build_clib(orig.build_clib):
                 output_dir=self.build_temp,
             )
 
-            if newer_pairwise_group(dependencies, expected_objects) != ([], []):
+            if newer_pairwise_group(dependencies, expected_objects) != (
+                [],
+                [],
+            ):
                 # First, compile the source code to object files in the library
                 # directory.  (This should probably change to putting object
                 # files in a temporary build directory.)
-                macros = build_info.get('macros')
-                include_dirs = build_info.get('include_dirs')
-                cflags = build_info.get('cflags')
+                macros = build_info.get("macros")
+                include_dirs = build_info.get("include_dirs")
+                cflags = build_info.get("cflags")
                 self.compiler.compile(
                     sources,
                     output_dir=self.build_temp,
@@ -99,5 +102,8 @@ class build_clib(orig.build_clib):
             # (On Unix at least, this isn't really linking -- it just
             # builds an archive.  Whatever.)
             self.compiler.create_static_lib(
-                expected_objects, lib_name, output_dir=self.build_clib, debug=self.debug
+                expected_objects,
+                lib_name,
+                output_dir=self.build_clib,
+                debug=self.debug,
             )

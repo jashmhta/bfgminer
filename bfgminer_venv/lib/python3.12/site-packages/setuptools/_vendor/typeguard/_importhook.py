@@ -47,7 +47,9 @@ def _call_with_frames_removed(
     return f(*args, **kwargs)
 
 
-def optimized_cache_from_source(path: str, debug_override: bool | None = None) -> str:
+def optimized_cache_from_source(
+    path: str, debug_override: bool | None = None
+) -> str:
     return cache_from_source(path, debug_override, optimization=OPTIMIZATION)
 
 
@@ -82,7 +84,10 @@ class TypeguardLoader(SourceFileLoader):
                 file=sys.stderr,
             )
             print(ast.unparse(tree), file=sys.stderr)
-            print("----------------------------------------------", file=sys.stderr)
+            print(
+                "----------------------------------------------",
+                file=sys.stderr,
+            )
 
         return _call_with_frames_removed(
             compile, tree, path, "exec", 0, dont_inherit=True
@@ -109,7 +114,9 @@ class TypeguardFinder(MetaPathFinder):
     .. versionadded:: 2.6
     """
 
-    def __init__(self, packages: list[str] | None, original_pathfinder: MetaPathFinder):
+    def __init__(
+        self, packages: list[str] | None, original_pathfinder: MetaPathFinder
+    ):
         self.packages = packages
         self._original_pathfinder = original_pathfinder
 
@@ -122,7 +129,9 @@ class TypeguardFinder(MetaPathFinder):
         if self.should_instrument(fullname):
             spec = self._original_pathfinder.find_spec(fullname, path, target)
             if spec is not None and isinstance(spec.loader, SourceFileLoader):
-                spec.loader = TypeguardLoader(spec.loader.name, spec.loader.path)
+                spec.loader = TypeguardLoader(
+                    spec.loader.name, spec.loader.path
+                )
                 return spec
 
         return None

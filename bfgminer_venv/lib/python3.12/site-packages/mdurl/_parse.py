@@ -143,7 +143,11 @@ class MutableURL:
         # user@server is *always* interpreted as a hostname, and url
         # resolution will treat //foo/bar as host=foo,path=bar because that's
         # how the browser resolves relative URLs.
-        if slashes_denote_host or proto or re.search(r"^//[^@/]+@[^@/]+", rest):
+        if (
+            slashes_denote_host
+            or proto
+            or re.search(r"^//[^@/]+@[^@/]+", rest)
+        ):
             slashes = rest.startswith("//")
             if slashes and not (proto and HOSTLESS_PROTOCOL[proto]):
                 rest = rest[2:]
@@ -216,9 +220,9 @@ class MutableURL:
 
             # if hostname begins with [ and ends with ]
             # assume that it's an IPv6 address.
-            ipv6_hostname = self.hostname.startswith("[") and self.hostname.endswith(
-                "]"
-            )
+            ipv6_hostname = self.hostname.startswith(
+                "["
+            ) and self.hostname.endswith("]")
 
             # validate a little.
             if not ipv6_hostname:
@@ -278,7 +282,11 @@ class MutableURL:
             rest = rest[:qm]
         if rest:
             self.pathname = rest
-        if SLASHED_PROTOCOL[lower_proto] and self.hostname and not self.pathname:
+        if (
+            SLASHED_PROTOCOL[lower_proto]
+            and self.hostname
+            and not self.pathname
+        ):
             self.pathname = ""
 
         return self
@@ -300,5 +308,12 @@ def url_parse(url: URL | str, *, slashes_denote_host: bool = False) -> URL:
     u = MutableURL()
     u.parse(url, slashes_denote_host)
     return URL(
-        u.protocol, u.slashes, u.auth, u.port, u.hostname, u.hash, u.search, u.pathname
+        u.protocol,
+        u.slashes,
+        u.auth,
+        u.port,
+        u.hostname,
+        u.hash,
+        u.search,
+        u.pathname,
     )

@@ -4,7 +4,11 @@ import sys
 import warnings
 from typing import TYPE_CHECKING, Any, Literal
 
-from typeguard._config import CollectionCheckStrategy, ForwardRefPolicy, global_config
+from typeguard._config import (
+    CollectionCheckStrategy,
+    ForwardRefPolicy,
+    global_config,
+)
 from typeguard._exceptions import InstrumentationWarning
 from typeguard._importhook import install_import_hook
 from typeguard._utils import qualified_name, resolve_reference
@@ -16,7 +20,8 @@ if TYPE_CHECKING:
 def pytest_addoption(parser: Parser) -> None:
     def add_ini_option(
         opt_type: (
-            Literal["string", "paths", "pathlist", "args", "linelist", "bool"] | None
+            Literal["string", "paths", "pathlist", "args", "linelist", "bool"]
+            | None
         ),
     ) -> None:
         parser.addini(
@@ -116,10 +121,14 @@ def pytest_configure(config: Config) -> None:
 
     forward_ref_policy_option = getoption("typeguard-forward-ref-policy")
     if forward_ref_policy_option:
-        forward_ref_policy = ForwardRefPolicy.__members__[forward_ref_policy_option]
+        forward_ref_policy = ForwardRefPolicy.__members__[
+            forward_ref_policy_option
+        ]
         global_config.forward_ref_policy = forward_ref_policy
 
-    collection_check_strategy_option = getoption("typeguard-collection-check-strategy")
+    collection_check_strategy_option = getoption(
+        "typeguard-collection-check-strategy"
+    )
     if collection_check_strategy_option:
         collection_check_strategy = CollectionCheckStrategy.__members__[
             collection_check_strategy_option
