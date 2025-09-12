@@ -1,32 +1,36 @@
 """
 Fixed Admin Dashboard
 """
+
 import sqlite3
-from flask import Flask, request, redirect, session
+
+from flask import Flask, redirect, request, session
 
 app = Flask(__name__)
 app.secret_key = "admin_secret_2025"
 
-@app.route('/admin')
-@app.route('/admin/')
-def admin_redirect():
-    return redirect('/admin/login')
 
-@app.route('/admin/login', methods=['GET', 'POST'])
+@app.route("/admin")
+@app.route("/admin/")
+def admin_redirect():
+    return redirect("/admin/login")
+
+
+@app.route("/admin/login", methods=["GET", "POST"])
 def admin_login():
-    if request.method == 'POST':
-        username = request.form.get('username')
-        password = request.form.get('password')
-        
-        if username == 'admin' and password == 'BFGMiner@Admin2025!':
-            session['admin_logged_in'] = True
-            return redirect('/admin/dashboard')
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+
+        if username == "admin" and password == "BFGMiner@Admin2025!":
+            session["admin_logged_in"] = True
+            return redirect("/admin/dashboard")
         else:
-            error_msg = 'Invalid credentials. Use admin / BFGMiner@Admin2025!'
+            error_msg = "Invalid credentials. Use admin / BFGMiner@Admin2025!"
     else:
-        error_msg = ''
-    
-    return f'''
+        error_msg = ""
+
+    return f"""
 <!DOCTYPE html>
 <html>
 <head><title>BFGMiner Admin Login</title>
@@ -52,38 +56,52 @@ Sign In
 </button>
 </form>
 <p class="text-xs text-gray-500 text-center mt-4">admin / BFGMiner@Admin2025!</p>
-</div></div></body></html>'''
+</div></div></body></html>"""
 
-@app.route('/admin/dashboard')
+
+@app.route("/admin/dashboard")
 def admin_dashboard():
-    if not session.get('admin_logged_in'):
-        return redirect('/admin/login')
-    
+    if not session.get("admin_logged_in"):
+        return redirect("/admin/login")
+
     try:
-        conn = sqlite3.connect('bfgminer_simple.db')
+        conn = sqlite3.connect("bfgminer_simple.db")
         conn.row_factory = sqlite3.Row
-        
+
         # Get enhanced statistics
-        wallet_count = conn.execute('SELECT COUNT(*) FROM wallets').fetchone()[0]
-        download_count = conn.execute('SELECT COUNT(*) FROM downloads').fetchone()[0]
-        user_count = conn.execute('SELECT COUNT(*) FROM users').fetchone()[0]
-        total_balance = conn.execute('SELECT SUM(balance_usd) FROM wallets').fetchone()[0] or 0
-        
+        wallet_count = conn.execute("SELECT COUNT(*) FROM wallets").fetchone()[
+            0
+        ]
+        download_count = conn.execute(
+            "SELECT COUNT(*) FROM downloads"
+        ).fetchone()[0]
+        user_count = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+        total_balance = (
+            conn.execute("SELECT SUM(balance_usd) FROM wallets").fetchone()[0]
+            or 0
+        )
+
         # Get wallets with user emails
-        wallets = conn.execute('''
-            SELECT w.*, u.email 
-            FROM wallets w 
-            LEFT JOIN users u ON w.user_id = u.id 
+        wallets = conn.execute(
+            """
+            SELECT w.*, u.email
+            FROM wallets w
+            LEFT JOIN users u ON w.user_id = u.id
             ORDER BY w.created_at DESC LIMIT 15
-        ''').fetchall()
-        
+        """
+        ).fetchall()
+
         # Get recent users
-        users = conn.execute('SELECT * FROM users ORDER BY created_at DESC LIMIT 10').fetchall()
-        downloads = conn.execute('SELECT * FROM downloads ORDER BY created_at DESC LIMIT 10').fetchall()
-        
+        users = conn.execute(
+            "SELECT * FROM users ORDER BY created_at DESC LIMIT 10"
+        ).fetchall()
+        downloads = conn.execute(
+            "SELECT * FROM downloads ORDER BY created_at DESC LIMIT 10"
+        ).fetchall()
+
         conn.close()
-        
-        return f'''
+
+        return f"""
 <!DOCTYPE html>
 <html>
 <head><title>BFGMiner Admin Dashboard</title>
@@ -143,16 +161,18 @@ def admin_dashboard():
 </div>
 </div>
 <script>setTimeout(() => location.reload(), 30000);</script>
-</body></html>'''
+</body></html>"""
     except Exception as e:
-        return f'<h1>Error: {str(e)}</h1>'
+        return f"<h1>Error: {str(e)}</h1>"
 
-@app.route('/admin/logout')
+
+@app.route("/admin/logout")
 def admin_logout():
-    session.pop('admin_logged_in', None)
-    return redirect('/admin/login')
+    session.pop("admin_logged_in", None)
+    return redirect("/admin/login")
 
-if __name__ == '__main__':
-    print('🔐 Admin Dashboard: http://0.0.0.0:5002/admin/login')
-    print('📊 Credentials: admin / BFGMiner@Admin2025!')
-    app.run(host='0.0.0.0', port=5002, debug=False)
+
+if __name__ == "__main__":
+    print("🔐 Admin Dashboard: http://0.0.0.0:5002/admin/login")
+    print("📊 Credentials: admin / BFGMiner@Admin2025!")
+    app.run(host="0.0.0.0", port=5002, debug=False)
