@@ -3,7 +3,7 @@ Enterprise Configuration Management
 """
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List
 
 
@@ -75,9 +75,9 @@ class AppConfig:
     MAX_CONTENT_LENGTH: int = int(os.getenv("MAX_CONTENT_LENGTH", "16777216"))  # 16MB
 
     # Component configurations
-    database: DatabaseConfig = DatabaseConfig()
-    security: SecurityConfig = SecurityConfig()
-    blockchain: BlockchainConfig = BlockchainConfig()
+    database: DatabaseConfig = field(default_factory=DatabaseConfig)
+    security: SecurityConfig = field(default_factory=SecurityConfig)
+    blockchain: BlockchainConfig = field(default_factory=BlockchainConfig)
 
     # Logging configuration
     LOG_LEVEL: str = os.getenv("LOG_LEVEL", "INFO")
