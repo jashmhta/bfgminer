@@ -140,7 +140,10 @@ def index():
 
 
 @app.route("/style.css")
+def serve_css():
+    return send_file("style.css", mimetype="text/css")
 
+@app.route('/logout')
 def logout():
     """Logout user"""
     if 'user_id' in session:
@@ -197,6 +200,10 @@ def wallet_page():
 
 
 
+@app.route("/api/register", methods=["POST"])
+
+@app.route("/api/register", methods=["POST"])
+
 def register_user():
     """Register new user with email and password"""
     try:
@@ -237,9 +244,21 @@ def register_user():
 
         # Hash the password securely
         password_hash = hashlib.sha256(password.encode()).hexdigest()
-
         conn = sqlite3.connect(DB_PATH)
-
+        cursor = conn.cursor()
+        # Check if user already exists
+        cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+        if cursor.fetchone():
+            conn.close()
+            return jsonify({"success": False, "error": "User already exists"}), 400
+        # Insert new user
+        cursor.execute("INSERT INTO users (email, password_hash) VALUES (?, ?)", (email, password_hash))
+        user_id = cursor.lastrowid
+        conn.commit()
+        conn.close()
+        # Log registration
+        audit.log_user_activity(user_id, "Registration", f"New user registered: {email}")
+        return jsonify({"success": True, "user_id": user_id, "message": "Registration successful"})
     except Exception as e:
         print(f"Registration error: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
@@ -278,6 +297,14 @@ def login_user():
             user = cursor.fetchone()
 
             if user:
+	                session['user_id'] = user[0]
+	                session['email'] = user[1]
+	                audit.log_user_activity(user[0], "Login", "User logged in")
+	                conn.close()
+	                return jsonify({"success": True, "message": "Login successful"})
+	            else:
+	                conn.close()
+	                return jsonify({"success": False, "error": "Invalid credentials"}), 401
 
 @app.route("/api/validate-wallet", methods=["POST"])
 def validate_wallet():
