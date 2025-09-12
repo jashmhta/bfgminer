@@ -11,6 +11,7 @@ import time
 
 from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
+import atexit
 
 app = Flask(__name__, static_folder=".")
 CORS(app)
@@ -103,7 +104,6 @@ def health_check():
 
 
 # Cleanup on shutdown
-import atexit
 
 atexit.register(stop_node_server)
 

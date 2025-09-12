@@ -11,12 +11,12 @@ import pytest
 
 sys.path.append("..")
 
-from enterprise_improvements import (AppConfig, AuditLogger, DatabaseManager,
+from enterprise_improvements import (AppConfig, AuditLogger, DatabaseManager, # noqa: E402
                                      EnterpriseBlockchainValidator,
-                                     SecurityManager)
-from error_handler import (AuthenticationError, BFGMinerException,
-                           BlockchainError, ErrorCode, ValidationError)
-from monitoring import DatabaseMonitor, SystemMonitor
+                                     SecurityManager) # noqa: E402
+from error_handler import (AuthenticationError, BFGMinerException, # noqa: E402
+                           BlockchainError, ErrorCode, ValidationError) # noqa: E402
+from monitoring import DatabaseMonitor, SystemMonitor # noqa: E402 # noqa: E402
 
 
 class TestSecurityManager:
