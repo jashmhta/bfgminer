@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Flask wrapper for BFGMiner Node.js application.
-This serves as a deployment wrapper to make the app compatible with Flask deployment.
+This serves as a deployment wrapper to make the app compatible with Flask deployment. # noqa: E501
 """
 
 import os
@@ -52,7 +52,7 @@ def stop_node_server():
     global node_process
     if node_process:
         try:
-            # Kill the process group to ensure all child processes are terminated
+            # Kill the process group to ensure all child processes are terminated # noqa: E501
             os.killpg(os.getpgid(node_process.pid), signal.SIGTERM)
             node_process.wait(timeout=5)
         except (ProcessLookupError, OSError) as e:
@@ -97,7 +97,9 @@ def health_check():
             "status": "healthy",
             "service": "BFGMiner Web Application",
             "node_server": (
-                "running" if node_process and node_process.poll() is None else "stopped"
+                "running"
+                if node_process and node_process.poll() is None
+                else "stopped"
             ),
         }
     )

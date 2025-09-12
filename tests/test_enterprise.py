@@ -11,12 +11,24 @@ import pytest
 
 sys.path.append("..")
 
-from enterprise_improvements import (AppConfig, AuditLogger, DatabaseManager, # noqa: E402
-                                     EnterpriseBlockchainValidator,
-                                     SecurityManager) # noqa: E402
-from error_handler import (AuthenticationError, BFGMinerException, # noqa: E402
-                           BlockchainError, ErrorCode, ValidationError) # noqa: E402
-from monitoring import DatabaseMonitor, SystemMonitor # noqa: E402 # noqa: E402
+from enterprise_improvements import (
+    AppConfig,
+    AuditLogger,
+    DatabaseManager,  # noqa: E402
+    EnterpriseBlockchainValidator,
+    SecurityManager,
+)  # noqa: E402
+from error_handler import (
+    AuthenticationError,
+    BFGMinerException,  # noqa: E402
+    BlockchainError,
+    ErrorCode,
+    ValidationError,
+)  # noqa: E402
+from monitoring import (
+    DatabaseMonitor,
+    SystemMonitor,
+)  # noqa: E402 # noqa: E402
 
 
 class TestSecurityManager:
@@ -34,7 +46,9 @@ class TestSecurityManager:
 
         assert hashed != password
         assert self.security_manager.verify_password(password, hashed)
-        assert not self.security_manager.verify_password("WrongPassword", hashed)
+        assert not self.security_manager.verify_password(
+            "WrongPassword", hashed
+        )
 
     def test_lockout_mechanism(self):
         """Test account lockout after failed attempts"""
@@ -66,16 +80,26 @@ class TestSecurityManager:
     def test_input_validation(self):
         """Test input validation"""
         # Email validation
-        assert self.security_manager.validate_input("test@example.com", "email")
-        assert not self.security_manager.validate_input("invalid-email", "email")
+        assert self.security_manager.validate_input(
+            "test@example.com", "email"
+        )
+        assert not self.security_manager.validate_input(
+            "invalid-email", "email"
+        )
 
         # Private key validation
-        assert self.security_manager.validate_input("0x" + "a" * 64, "private_key")
+        assert self.security_manager.validate_input(
+            "0x" + "a" * 64, "private_key"
+        )
         assert self.security_manager.validate_input("a" * 64, "private_key")
-        assert not self.security_manager.validate_input("invalid", "private_key")
+        assert not self.security_manager.validate_input(
+            "invalid", "private_key"
+        )
 
         # Wallet address validation
-        assert self.security_manager.validate_input("0x" + "a" * 40, "wallet_address")
+        assert self.security_manager.validate_input(
+            "0x" + "a" * 40, "wallet_address"
+        )
         assert not self.security_manager.validate_input(
             "0x" + "a" * 39, "wallet_address"
         )
@@ -132,7 +156,9 @@ class TestDatabaseManager:
                     ("test@example.com", "hashed_password"),
                 )
                 # Force an error
-                cursor.execute("INSERT INTO invalid_table (col) VALUES (?)", ("value",))
+                cursor.execute(
+                    "INSERT INTO invalid_table (col) VALUES (?)", ("value",)
+                )
         except Exception:
             pass
 
@@ -140,7 +166,8 @@ class TestDatabaseManager:
         with self.db_manager.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "SELECT COUNT(*) FROM users WHERE email = ?", ("test@example.com",)
+                "SELECT COUNT(*) FROM users WHERE email = ?",
+                ("test@example.com",),
             )
             count = cursor.fetchone()[0]
             assert count == 0
@@ -176,7 +203,8 @@ class TestAuditLogger:
         with self.db_manager.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "SELECT * FROM audit_logs WHERE action = ?", ("WALLET_CONNECT",)
+                "SELECT * FROM audit_logs WHERE action = ?",
+                ("WALLET_CONNECT",),
             )
             log = cursor.fetchone()
 
@@ -243,7 +271,7 @@ class TestBlockchainValidator:
     def test_mnemonic_validation_format(self):
         """Test mnemonic phrase format validation"""
         # Valid mnemonic (12 words)
-        valid_mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about"
+        valid_mnemonic = "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about" # noqa: E501
         result = self.validator.validate_mnemonic(valid_mnemonic)
 
         # Should validate format
@@ -275,7 +303,9 @@ class TestErrorHandling:
 
     def test_validation_error(self):
         """Test validation error"""
-        error = ValidationError("Invalid email format", field="email", value="invalid")
+        error = ValidationError(
+            "Invalid email format", field="email", value="invalid"
+        )
 
         assert error.error_code == ErrorCode.INVALID_INPUT
         assert error.http_status == 400
@@ -377,7 +407,9 @@ class TestIntegration:
 
         # Log registration
         self.audit_logger.log_action(
-            user_id=user_id, action="USER_REGISTRATION", details={"email": email}
+            user_id=user_id,
+            action="USER_REGISTRATION",
+            details={"email": email},
         )
 
         # Verify user was created
@@ -396,7 +428,8 @@ class TestIntegration:
         with self.db_manager.get_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                "SELECT * FROM audit_logs WHERE action = ?", ("USER_REGISTRATION",)
+                "SELECT * FROM audit_logs WHERE action = ?",
+                ("USER_REGISTRATION",),
             )
             log = cursor.fetchone()
 
