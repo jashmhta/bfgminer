@@ -380,8 +380,8 @@ cleanup() {
     fi
 }
 
-# Trap cleanup on script exit
-trap cleanup EXIT
+# Trap cleanup on script exit (disabled for persistent deployment)
+# trap cleanup EXIT
 
 # Main deployment flow
 main() {
