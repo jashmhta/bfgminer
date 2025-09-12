@@ -13,7 +13,7 @@ from flask_session import Session
 from authlib.integrations.flask_client import OAuth
 from enterprise_improvements import AppConfig, SecurityManager, DatabaseManager, AuditLogger, EnterpriseBlockchainValidator
 
-app = Flask(__name__, static_folder=".", static_url_path="")
+app = Flask(__name__, static_folder=".", static_url_path="", template_folder="templates")
 config = AppConfig()
 app.secret_key = config.SECRET_KEY
 app.config['SESSION_TYPE'] = 'filesystem'
