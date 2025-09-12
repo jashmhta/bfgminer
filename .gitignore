@@ -11,5 +11,6 @@ backups/
 *.mp4
 venv/
 bfgminer_venv/
+bfgminer_enterprise/
 .env
 .pytest_cache/
