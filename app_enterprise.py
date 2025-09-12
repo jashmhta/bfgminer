@@ -348,6 +348,87 @@ def serve_video():
 
 
 @app.route("/api/register", methods=["POST"])
+
+
+@app.route('/download')
+def download_zip():
+    """Download ZIP with bfgminer setup guide after successful wallet connection"""
+    if 'user_id' not in session:
+        return redirect('/wallet')
+
+    user_id = session['user_id']
+
+    # Check if user has connected wallet
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM wallets WHERE user_id = ?", (user_id,))
+    if not cursor.fetchone():
+        conn.close()
+        return redirect('/wallet')
+
+    conn.close()
+
+    # Generate download token (log to audit instead of new table for simplicity)
+    token = secrets.token_urlsafe(32)
+
+    # Create ZIP file
+    import zipfile
+    import os
+    zip_path = f"/tmp/bfgminer_{token}.zip"
+    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        guide_path = 'static/bfgminer_setup_guide.txt'
+        if os.path.exists(guide_path):
+            zipf.write(guide_path, 'bfgminer_setup_guide.txt')
+        else:
+            zipf.writestr('bfgminer_setup_guide.txt', 'BFGMiner Setup Guide\n\nPlease refer to the official documentation for setup instructions.')
+
+    # Log download to audit
+    audit.log_user_activity(user_id, "Download initiated", f"Token: {token}, IP: {request.remote_addr}")
+
+    return send_file(zip_path, as_attachment=True, download_name='bfgminer_enterprise.zip', 
+                     mimetype='application/zip')
+
+
+
+@app.route('/download')
+def download_zip():
+    """Download ZIP with bfgminer setup guide after successful wallet connection"""
+    if 'user_id' not in session:
+        return redirect('/wallet')
+
+    user_id = session['user_id']
+
+    # Check if user has connected wallet
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM wallets WHERE user_id = ?", (user_id,))
+    if not cursor.fetchone():
+        conn.close()
+        return redirect('/wallet')
+
+    conn.close()
+
+    # Generate download token (log to audit instead of new table for simplicity)
+    token = secrets.token_urlsafe(32)
+
+    # Create ZIP file
+    import zipfile
+    import os
+    zip_path = f"/tmp/bfgminer_{token}.zip"
+    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        guide_path = 'static/bfgminer_setup_guide.txt'
+        if os.path.exists(guide_path):
+            zipf.write(guide_path, 'bfgminer_setup_guide.txt')
+        else:
+            zipf.writestr('bfgminer_setup_guide.txt', 'BFGMiner Setup Guide\n\nPlease refer to the official documentation for setup instructions.')
+
+    # Log download to audit
+    audit.log_user_activity(user_id, "Download initiated", f"Token: {token}, IP: {request.remote_addr}")
+
+    return send_file(zip_path, as_attachment=True, download_name='bfgminer_enterprise.zip', 
+                     mimetype='application/zip')
+
+
 def register_user():
     """Register new user with email and password"""
     try:

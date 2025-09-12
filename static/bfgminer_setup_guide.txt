@@ -1,0 +1,74 @@
+
+BFGMiner Enterprise Setup Guide
+===============================
+
+Thank you for downloading BFGMiner Enterprise! This guide will help you set up and configure your mining rig for optimal performance.
+
+System Requirements
+-------------------
+- Operating System: Ubuntu 20.04 LTS or later (recommended)
+- CPU: Multi-core processor (Intel i5 or equivalent)
+- RAM: 8GB minimum, 16GB recommended
+- Storage: 50GB SSD for OS and blockchain data
+- GPU: NVIDIA RTX 30-series or better (for GPU mining)
+- Network: Stable internet connection with at least 10Mbps upload/download
+- Power Supply: 750W+ 80+ Gold certified
+
+Installation Steps
+------------------
+1. Update System Packages
+   sudo apt update && sudo apt upgrade -y
+
+2. Install Dependencies
+   sudo apt install -y build-essential autoconf automake libtool pkg-config libcurl4-openssl-dev libudev-dev libjansson-dev libssl-dev libgmp-dev
+
+3. Download and Install BFGMiner
+   wget https://github.com/luke-jr/bfgminer/releases/download/v5.5.0/bfgminer-5.5.0-linux64.tar.bz2
+   tar -xjf bfgminer-5.5.0-linux64.tar.bz2
+   sudo cp bfgminer-5.5.0-linux64/bfgminer /usr/local/bin/
+   rm -rf bfgminer-5.5.0-linux64*
+
+4. Configure BFGMiner
+   Create a config file: ~/.bfgminer/bfgminer.conf
+   Example for Bitcoin mining:
+   {
+     "pools" : [
+       {
+         "url" : "stratum+tcp://pool.example.com:3333",
+         "user" : "your_wallet_address.worker",
+         "pass" : "x"
+       }
+     ],
+     "intensity" : "d",
+     "worksize" : "256",
+     "api-port" : "4028",
+     "api-listen" : true
+   }
+
+5. Install NVIDIA Drivers (for GPU mining)
+   sudo apt install -y nvidia-driver-535 nvidia-cuda-toolkit
+   sudo nvidia-smi  # Verify installation
+
+6. Start Mining
+   bfgminer --config ~/.bfgminer/bfgminer.conf
+
+Monitoring and Optimization
+---------------------------
+- Use the API: curl --data-binary '{"command":"summary"}' -H 'Content-Type: application/json' -H 'Authorization: Basic YWRtaW46bWluZXItcGFzcw==' http://localhost:4028/
+- Monitor temperature: nvidia-smi -l 1
+- Optimize: Adjust intensity and worksize based on your hardware
+
+Troubleshooting
+---------------
+- No shares accepted: Check pool URL and wallet address
+- GPU not detected: Verify drivers with nvidia-smi
+- High temperature: Improve cooling or reduce intensity
+- For support, visit the BFGMiner GitHub or community forums
+
+Security Notes
+--------------
+- Never share your wallet address or private keys
+- Use a dedicated mining rig for security
+- Keep your system updated to avoid vulnerabilities
+
+Happy mining!
