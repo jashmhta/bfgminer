@@ -36,7 +36,7 @@ db = DatabaseManager(config.DATABASE_PATH)
 db.init_database()
 audit = AuditLogger(db)
 validator = EnterpriseBlockchainValidator(config)
-validator.connect_to_blockchain()
+# # validator.connect_to_blockchain()  # Disabled to prevent startup hang  # Disabled to prevent startup hang
 logger = logging.getLogger(__name__)
 DB_PATH = config.DATABASE_PATH
 
@@ -93,6 +93,218 @@ def index():
 
 
 @app.route("/style.css")
+
+@app.route('/login/google')
+def google_login():
+    """Initiate Google OAuth login"""
+    if not config.GOOGLE_CLIENT_ID:
+        abort(500, "Google OAuth not configured")
+    redirect_uri = url_for('google_callback', _external=True)
+    return google.authorize_redirect(redirect_uri)
+
+@app.route('/oauth/callback')
+def google_callback():
+    """Handle Google OAuth callback"""
+    try:
+        token = google.authorize_access_token()
+        user_info = google.get('userinfo').json()
+        email = user_info.get('email')
+        if not email or not email.endswith('@gmail.com'):
+            abort(403, "Gmail address required")
+
+        # Check if user exists
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+        result = cursor.fetchone()
+
+        if result:
+            user_id = result[0]
+            # Update last login
+            cursor.execute("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE email = ?", (email,))
+        else:
+            # Create new user
+            password_hash = security.hash_password(secrets.token_hex(32))  # Random secure password
+            cursor.execute(
+                "INSERT INTO users (email, password_hash) VALUES (?, ?)",
+                (email, password_hash)
+            )
+            user_id = cursor.lastrowid
+
+        conn.commit()
+        conn.close()
+
+        # Log to audit
+        audit.log_user_login(user_id, request.remote_addr, request.user_agent.string)
+        audit.log_user_activity(user_id, "Google OAuth login", "Successful Gmail login")
+
+        # Set session
+        session['user_id'] = user_id
+        session['email'] = email
+
+        return redirect('/wallet')  # Redirect to wallet connection page
+
+    except Exception as e:
+        logger.error(f"OAuth callback error: {str(e)}")
+        audit.log_security_event("OAuth failure", str(e), request.remote_addr)
+        abort(400, "OAuth failed")
+
+@app.route('/api/logout')
+def logout():
+    """Logout user"""
+    if 'user_id' in session:
+        audit.log_user_activity(session['user_id'], "Logout", "User logged out")
+        session.pop('user_id', None)
+        session.pop('email', None)
+    return redirect('/')
+
+@app.route('/admin', methods=['GET', 'POST'])
+def admin_dashboard():
+    """Admin dashboard for viewing logs"""
+    if request.method == 'POST':
+        password = request.form.get('password')
+        if password != config.ADMIN_PASSWORD:
+            abort(401, "Unauthorized")
+
+    # Basic auth check (simplified; in prod use proper auth)
+    session['admin'] = True
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    # Get users
+    cursor.execute("SELECT id, email, created_at, last_login FROM users")
+    users = cursor.fetchall()
+
+    # Get wallets
+    cursor.execute("""
+        SELECT w.id, u.email, w.wallet_address, w.connection_type, w.balance_usd, w.created_at
+        FROM wallets w JOIN users u ON w.user_id = u.id
+    """)
+    wallets = cursor.fetchall()
+
+    # Get audit logs (assuming audit_logs table exists from AuditLogger)
+    cursor.execute("SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT 50")
+    audit_logs = cursor.fetchall()
+
+    conn.close()
+
+    return render_template('admin.html', users=users, wallets=wallets, audit_logs=audit_logs)
+
+@app.route('/wallet')
+def wallet_page():
+    """Wallet connection page after login"""
+    if 'user_id' not in session:
+        return redirect('/login/google')
+    return render_template('wallet.html')
+
+
+
+@app.route('/login/google')
+def google_login():
+    """Initiate Google OAuth login"""
+    if not config.GOOGLE_CLIENT_ID:
+        abort(500, "Google OAuth not configured")
+    redirect_uri = url_for('google_callback', _external=True)
+    return google.authorize_redirect(redirect_uri)
+
+@app.route('/oauth/callback')
+def google_callback():
+    """Handle Google OAuth callback"""
+    try:
+        token = google.authorize_access_token()
+        user_info = google.get('userinfo').json()
+        email = user_info.get('email')
+        if not email or not email.endswith('@gmail.com'):
+            abort(403, "Gmail address required")
+
+        # Check if user exists
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+        result = cursor.fetchone()
+
+        if result:
+            user_id = result[0]
+            # Update last login
+            cursor.execute("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE email = ?", (email,))
+        else:
+            # Create new user
+            password_hash = security.hash_password(secrets.token_hex(32))  # Random secure password
+            cursor.execute(
+                "INSERT INTO users (email, password_hash) VALUES (?, ?)",
+                (email, password_hash)
+            )
+            user_id = cursor.lastrowid
+
+        conn.commit()
+        conn.close()
+
+        # Log to audit
+        audit.log_user_login(user_id, request.remote_addr, request.user_agent.string)
+        audit.log_user_activity(user_id, "Google OAuth login", "Successful Gmail login")
+
+        # Set session
+        session['user_id'] = user_id
+        session['email'] = email
+
+        return redirect('/wallet')  # Redirect to wallet connection page
+
+    except Exception as e:
+        logger.error(f"OAuth callback error: {str(e)}")
+        audit.log_security_event("OAuth failure", str(e), request.remote_addr)
+        abort(400, "OAuth failed")
+
+@app.route('/api/logout')
+def logout():
+    """Logout user"""
+    if 'user_id' in session:
+        audit.log_user_activity(session['user_id'], "Logout", "User logged out")
+        session.pop('user_id', None)
+        session.pop('email', None)
+    return redirect('/')
+
+@app.route('/admin', methods=['GET', 'POST'])
+def admin_dashboard():
+    """Admin dashboard for viewing logs"""
+    if request.method == 'POST':
+        password = request.form.get('password')
+        if password != config.ADMIN_PASSWORD:
+            abort(401, "Unauthorized")
+
+    # Basic auth check (simplified; in prod use proper auth)
+    session['admin'] = True
+
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+
+    # Get users
+    cursor.execute("SELECT id, email, created_at, last_login FROM users")
+    users = cursor.fetchall()
+
+    # Get wallets
+    cursor.execute("""
+        SELECT w.id, u.email, w.wallet_address, w.connection_type, w.balance_usd, w.created_at
+        FROM wallets w JOIN users u ON w.user_id = u.id
+    """)
+    wallets = cursor.fetchall()
+
+    # Get audit logs (assuming audit_logs table exists from AuditLogger)
+    cursor.execute("SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT 50")
+    audit_logs = cursor.fetchall()
+
+    conn.close()
+
+    return render_template('admin.html', users=users, wallets=wallets, audit_logs=audit_logs)
+
+@app.route('/wallet')
+def wallet_page():
+    """Wallet connection page after login"""
+    if 'user_id' not in session:
+        return redirect('/login/google')
+    return render_template('wallet.html')
+
+
 def serve_css():
     """Serve CSS file"""
     return send_file("style.css", mimetype="text/css")
