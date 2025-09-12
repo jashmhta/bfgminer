@@ -21,7 +21,9 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from web3 import Web3
 from web3.providers import HTTPProvider
-from web3.providers import HTTPProvider
+from mnemonic import Mnemonic
+from eth_account import Account
+import psutil
 
 from blockchain_validator import BlockchainValidator
 
@@ -59,13 +61,9 @@ class AppConfig:
     # Security configuration
     BCRYPT_ROUNDS: int = 12
     MAX_LOGIN_ATTEMPTS: int = 5
-    # Security configuration
-    BCRYPT_ROUNDS: int = 12
-    MAX_LOGIN_ATTEMPTS: int = 5
 
-    # Security configuration
-    BCRYPT_ROUNDS: int = 12
-    MAX_LOGIN_ATTEMPTS: int = 5
+    GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID", "")
+    GOOGLE_CLIENT_SECRET: str = os.getenv("GOOGLE_CLIENT_SECRET", "")
 
 
 class SecurityManager:
@@ -225,7 +223,44 @@ class EnterpriseBlockchainValidator:
             return {"valid": False, "message": "Invalid"}
 
     def validate_mnemonic(self, mnemonic):
-        words = mnemonic.split()
-        if len(words) in [12, 24]:
-            return {"valid": True, "message": "Valid format"}
-        return {"valid": False, "message": "Invalid word count"}
+        mnemo = Mnemonic("english")
+        if mnemo.check(mnemonic):
+            return {"valid": True, "message": "Valid BIP39 mnemonic"}
+        return {"valid": False, "message": "Invalid mnemonic"}
+
+    def get_wallet_from_mnemonic(self, mnemonic):
+        try:
+            mnemo = Mnemonic("english")
+            seed = mnemo.to_seed(mnemonic)
+            account = Account.from_key(seed[:32])  # First 32 bytes for private key
+            return {"address": account.address, "private_key": account.key.hex()}
+        except:
+            return None
+
+    def get_balance(self, address, chain='ethereum'):
+        if not self.w3:
+            self.connect_to_blockchain()
+        if not self.w3:
+            return None
+        try:
+            balance_wei = self.w3.eth.get_balance(address)
+            balance_eth = self.w3.from_wei(balance_wei, 'ether')
+            # Placeholder ETH price; in production, fetch from API
+            eth_price = 2500.0
+            balance_usd = float(balance_eth) * eth_price
+            return {"balance_eth": float(balance_eth), "balance_usd": balance_usd}
+        except Exception as e:
+            logger.error(f"Balance fetch error: {e}")
+            return None
+
+    def validate_private_key(self, private_key):
+        try:
+            if private_key.startswith('0x'):
+                private_key = private_key[2:]
+            if len(private_key) != 64:
+                return {"valid": False, "message": "Invalid length"}
+            key = bytes.fromhex(private_key)
+            account = Account.from_key(key)
+            return {"valid": True, "message": "Valid", "address": account.address}
+        except:
+            return {"valid": False, "message": "Invalid"}

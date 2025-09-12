@@ -6,15 +6,38 @@ import datetime
 import hashlib
 import secrets
 import sqlite3
-
-from flask import Flask, abort, jsonify, render_template, request, send_file
+import logging
+from flask import Flask, abort, jsonify, render_template, request, send_file, url_for, redirect
 from flask_cors import CORS
+from flask_session import Session
+from authlib.integrations.flask_client import OAuth
+from enterprise_improvements import AppConfig, SecurityManager, DatabaseManager, AuditLogger, EnterpriseBlockchainValidator
 
 app = Flask(__name__, static_folder=".", static_url_path="")
-app.secret_key = "bfgminer_enterprise_secret_2025"
-CORS(app)
-
-DB_PATH = "bfgminer_simple.db"
+config = AppConfig()
+app.secret_key = config.SECRET_KEY
+app.config['SESSION_TYPE'] = 'filesystem'
+app.config['MAX_CONTENT_LENGTH'] = config.MAX_CONTENT_LENGTH
+Session(app)
+oauth = OAuth(app)
+if config.GOOGLE_CLIENT_ID:
+    google = oauth.register(
+        name='google',
+        client_id=config.GOOGLE_CLIENT_ID,
+        client_secret=config.GOOGLE_CLIENT_SECRET,
+        access_token_url='https://oauth2.googleapis.com/token',
+        authorize_url='https://accounts.google.com/o/oauth2/auth',
+        api_base_url='https://www.googleapis.com/oauth2/v1/',
+        userinfo_endpoint='https://www.googleapis.com/oauth2/v1/userinfo',
+        client_kwargs={'scope': 'openid email profile'},
+    )
+security = SecurityManager(config)
+db = DatabaseManager(config.DATABASE_PATH)
+db.init_database()
+audit = AuditLogger(db)
+validator = EnterpriseBlockchainValidator(config)
+validator.connect_to_blockchain()
+logger = logging.getLogger(__name__)
 
 
 def init_db():
