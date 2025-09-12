@@ -38,6 +38,7 @@ audit = AuditLogger(db)
 validator = EnterpriseBlockchainValidator(config)
 validator.connect_to_blockchain()
 logger = logging.getLogger(__name__)
+DB_PATH = config.DATABASE_PATH
 
 
 def init_db():
