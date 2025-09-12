@@ -133,7 +133,7 @@ class TestDatabaseManager:
                 )
                 # Force an error
                 cursor.execute("INSERT INTO invalid_table (col) VALUES (?)", ("value",))
-        except:
+        except Exception:
             pass
 
         # Check that the first insert was rolled back

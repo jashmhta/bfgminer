@@ -58,7 +58,7 @@ def stop_node_server():
             print(f"Error stopping Node.js server: {e}")
             try:
                 os.killpg(os.getpgid(node_process.pid), signal.SIGKILL)
-            except:
+            except Exception:
                 pass
         finally:
             node_process = None
