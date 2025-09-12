@@ -3,6 +3,8 @@ __pycache__/
 *.pyc
 *.log
 bfgminer.db
+bfgminer_simple.db
 *.mp4
 venv/
+bfgminer_venv/
 .env
