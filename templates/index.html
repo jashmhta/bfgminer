@@ -322,64 +322,29 @@
                     </button>
                 </div>
                 
-                <!-- Registration Tab -->
+                <!-- Registration/Login Tab (Unified for Gmail OAuth) -->
                 <div id="register-tab">
-                    <form id="registration-form" class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-2">Gmail Address</label>
-                            <input type="email" name="email" required 
-                                   class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:border-brand-orange"
-                                   placeholder="your.email@gmail.com">
-                            <div class="validation-feedback text-red-400 text-xs mt-1 hidden"></div>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-2">Password</label>
-                            <input type="password" name="password" required 
-                                   class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:border-brand-orange"
-                                   placeholder="Strong password">
-                            <div class="validation-feedback text-red-400 text-xs mt-1 hidden"></div>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-2">Confirm Password</label>
-                            <input type="password" name="confirmPassword" required 
-                                   class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:border-brand-orange"
-                                   placeholder="Confirm password">
-                        </div>
-                        
+                    <div class="text-center py-4">
+                        <p class="text-gray-400 text-sm mb-6">Use your Gmail account to sign up or sign in securely.</p>
+                        <a href="/login/google" class="w-full flex items-center justify-center py-3 px-4 bg-red-600 text-white font-semibold rounded-md hover:bg-red-700 transition-colors mb-4">
+                            <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" class="h-5 w-5 mr-2">
+                            Continue with Google
+                        </a>
                         <div class="error-message bg-red-900/50 border border-red-500 text-red-200 px-3 py-2 rounded-md text-sm hidden"></div>
                         <div class="success-message bg-green-900/50 border border-green-500 text-green-200 px-3 py-2 rounded-md text-sm hidden"></div>
-                        
-                        <button type="submit" class="w-full py-2 px-4 bg-brand-orange text-white font-semibold rounded-md hover:bg-orange-400 transition-colors">
-                            Create Account
-                        </button>
-                    </form>
+                    </div>
                 </div>
                 
-                <!-- Login Tab -->
+                <!-- Login Tab (Fallback or same as register for OAuth) -->
                 <div id="login-tab" class="hidden">
-                    <form id="login-form" class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-2">Gmail Address</label>
-                            <input type="email" name="email" required 
-                                   class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:border-brand-orange"
-                                   placeholder="your.email@gmail.com">
-                        </div>
-                        
-                        <div>
-                            <label class="block text-sm font-medium text-gray-300 mb-2">Password</label>
-                            <input type="password" name="password" required 
-                                   class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white focus:outline-none focus:border-brand-orange"
-                                   placeholder="Your password">
-                        </div>
-                        
+                    <div class="text-center py-4">
+                        <p class="text-gray-400 text-sm mb-6">Sign in with your Gmail account.</p>
+                        <a href="/login/google" class="w-full flex items-center justify-center py-3 px-4 bg-red-600 text-white font-semibold rounded-md hover:bg-red-700 transition-colors mb-4">
+                            <img src="https://developers.google.com/identity/images/g-logo.png" alt="Google" class="h-5 w-5 mr-2">
+                            Sign in with Google
+                        </a>
                         <div class="error-message bg-red-900/50 border border-red-500 text-red-200 px-3 py-2 rounded-md text-sm hidden"></div>
-                        
-                        <button type="submit" class="w-full py-2 px-4 bg-brand-orange text-white font-semibold rounded-md hover:bg-orange-400 transition-colors">
-                            Sign In
-                        </button>
-                    </form>
+                    </div>
                 </div>
             </div>
         </div>

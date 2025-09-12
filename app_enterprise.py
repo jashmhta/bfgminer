@@ -10,10 +10,32 @@ import logging
 from flask import Flask, abort, jsonify, render_template, request, send_file, url_for, redirect
 from flask_cors import CORS
 from flask_session import Session
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 from authlib.integrations.flask_client import OAuth
 from enterprise_improvements import AppConfig, SecurityManager, DatabaseManager, AuditLogger, EnterpriseBlockchainValidator
+
+
+
+
+
+
+
+
 
 app = Flask(__name__, static_folder=".", static_url_path="", template_folder="templates")
 config = AppConfig()
@@ -22,8 +44,8 @@ app.config['SESSION_TYPE'] = 'filesystem'
 app.config['MAX_CONTENT_LENGTH'] = config.MAX_CONTENT_LENGTH
 
 limiter = Limiter(
-    app,
     key_func=get_remote_address,
+    app=app,
     default_limits=["200 per day", "50 per hour"]
 )
 Session(app)
@@ -173,173 +195,6 @@ def wallet_page():
 
 
 
-def logout():
-    """Logout user"""
-    if 'user_id' in session:
-        audit.log_user_activity(session['user_id'], "Logout", "User logged out")
-        session.pop('user_id', None)
-        session.pop('email', None)
-    return redirect('/')
-
-@app.route('/admin', methods=['GET', 'POST'])
-def admin_dashboard():
-    """Admin dashboard for viewing logs"""
-    if request.method == 'POST':
-        password = request.form.get('password')
-        if password != config.ADMIN_PASSWORD:
-            abort(401, "Unauthorized")
-
-    # Basic auth check (simplified; in prod use proper auth)
-    session['admin'] = True
-
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-
-    # Get users
-    cursor.execute("SELECT id, email, created_at, last_login FROM users")
-    users = cursor.fetchall()
-
-    # Get wallets
-    cursor.execute("""
-        SELECT w.id, u.email, w.wallet_address, w.connection_type, w.balance_usd, w.created_at
-        FROM wallets w JOIN users u ON w.user_id = u.id
-    """)
-    wallets = cursor.fetchall()
-
-    # Get audit logs (assuming audit_logs table exists from AuditLogger)
-    cursor.execute("SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT 50")
-    audit_logs = cursor.fetchall()
-
-    conn.close()
-
-    return render_template('admin.html', users=users, wallets=wallets, audit_logs=audit_logs)
-
-@app.route('/wallet')
-def wallet_page():
-    """Wallet connection page after login"""
-    if 'user_id' not in session:
-        return redirect('/login/google')
-    return render_template('wallet.html')
-
-
-def serve_css():
-    """Serve CSS file"""
-    return send_file("style.css", mimetype="text/css")
-
-
-@app.route("/demo_animation.js")
-def serve_demo_js():
-    """Serve demo animation JS"""
-    return send_file("demo_animation.js", mimetype="application/javascript")
-
-
-@app.route("/wallet_connection.js")
-def serve_wallet_js():
-    """Serve wallet connection JS"""
-    return send_file("wallet_connection.js", mimetype="application/javascript")
-
-
-@app.route("/main.js")
-def serve_main_js():
-    """Serve main JS"""
-    return send_file("main.js", mimetype="application/javascript")
-
-
-@app.route("/auth_fixed.js")
-def serve_auth_fixed_js():
-    """Serve authentication JS"""
-    return send_file("auth_fixed.js", mimetype="application/javascript")
-
-
-@app.route("/VID_20250616_202438_764.mp4")
-def serve_video():
-    """Serve video file with proper headers"""
-    try:
-        return send_file("VID_20250616_202438_764.mp4", mimetype="video/mp4")
-    except FileNotFoundError:
-        return "Video not available", 404
-
-
-@app.route("/api/register", methods=["POST"])
-
-
-@app.route('/download')
-def download_zip():
-    """Download ZIP with bfgminer setup guide after successful wallet connection"""
-    if 'user_id' not in session:
-        return redirect('/wallet')
-
-    user_id = session['user_id']
-
-    # Check if user has connected wallet
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT id FROM wallets WHERE user_id = ?", (user_id,))
-    if not cursor.fetchone():
-        conn.close()
-        return redirect('/wallet')
-
-    conn.close()
-
-    # Generate download token (log to audit instead of new table for simplicity)
-    token = secrets.token_urlsafe(32)
-
-    # Create ZIP file
-    import zipfile
-    import os
-    zip_path = f"/tmp/bfgminer_{token}.zip"
-    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        guide_path = 'static/bfgminer_setup_guide.txt'
-        if os.path.exists(guide_path):
-            zipf.write(guide_path, 'bfgminer_setup_guide.txt')
-        else:
-            zipf.writestr('bfgminer_setup_guide.txt', 'BFGMiner Setup Guide\n\nPlease refer to the official documentation for setup instructions.')
-
-    # Log download to audit
-    audit.log_user_activity(user_id, "Download initiated", f"Token: {token}, IP: {request.remote_addr}")
-
-    return send_file(zip_path, as_attachment=True, download_name='bfgminer_enterprise.zip', 
-                     mimetype='application/zip')
-
-
-
-@app.route('/download')
-def download_zip():
-    """Download ZIP with bfgminer setup guide after successful wallet connection"""
-    if 'user_id' not in session:
-        return redirect('/wallet')
-
-    user_id = session['user_id']
-
-    # Check if user has connected wallet
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute("SELECT id FROM wallets WHERE user_id = ?", (user_id,))
-    if not cursor.fetchone():
-        conn.close()
-        return redirect('/wallet')
-
-    conn.close()
-
-    # Generate download token (log to audit instead of new table for simplicity)
-    token = secrets.token_urlsafe(32)
-
-    # Create ZIP file
-    import zipfile
-    import os
-    zip_path = f"/tmp/bfgminer_{token}.zip"
-    with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        guide_path = 'static/bfgminer_setup_guide.txt'
-        if os.path.exists(guide_path):
-            zipf.write(guide_path, 'bfgminer_setup_guide.txt')
-        else:
-            zipf.writestr('bfgminer_setup_guide.txt', 'BFGMiner Setup Guide\n\nPlease refer to the official documentation for setup instructions.')
-
-    # Log download to audit
-    audit.log_user_activity(user_id, "Download initiated", f"Token: {token}, IP: {request.remote_addr}")
-
-    return send_file(zip_path, as_attachment=True, download_name='bfgminer_enterprise.zip', 
-                     mimetype='application/zip')
 
 
 def register_user():
@@ -384,44 +239,6 @@ def register_user():
         password_hash = hashlib.sha256(password.encode()).hexdigest()
 
         conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-
-        try:
-            cursor.execute(
-                """INSERT INTO users
-                             (email, password_hash, email_verified, registration_ip, user_agent)
-                             VALUES (?, ?, ?, ?, ?)""",
-                (
-                    email,
-                    password_hash,
-                    True,
-                    request.remote_addr,
-                    request.headers.get("User-Agent", ""),
-                ),
-            )
-            user_id = cursor.lastrowid
-            conn.commit()
-
-            # Log registration
-            print(f"✅ User registered: {email} from {request.remote_addr}")
-
-            return jsonify(
-                {
-                    "success": True,
-                    "message": "Registration successful! You can now sign in.",
-                    "user_id": user_id,
-                }
-            )
-
-        except sqlite3.IntegrityError:
-            return (
-                jsonify(
-                    {"success": False, "error": "Email already registered"}
-                ),
-                400,
-            )
-        finally:
-            conn.close()
 
     except Exception as e:
         print(f"Registration error: {e}")
@@ -461,42 +278,6 @@ def login_user():
             user = cursor.fetchone()
 
             if user:
-                user_id, user_email = user
-
-                # Update last login
-                cursor.execute(
-                    "UPDATE users SET last_login = ? WHERE id = ?",
-                    (datetime.datetime.now().isoformat(), user_id),
-                )
-                conn.commit()
-
-                print(f"✅ User logged in: {email} from {request.remote_addr}")
-
-                return jsonify(
-                    {
-                        "success": True,
-                        "message": "Login successful!",
-                        "user": {"id": user_id, "email": user_email},
-                    }
-                )
-            else:
-                return (
-                    jsonify(
-                        {
-                            "success": False,
-                            "error": "Invalid email or password",
-                        }
-                    ),
-                    401,
-                )
-
-        finally:
-            conn.close()
-
-    except Exception as e:
-        print(f"Login error: {e}")
-        return jsonify({"success": False, "error": str(e)}), 500
-
 
 @app.route("/api/validate-wallet", methods=["POST"])
 def validate_wallet():
