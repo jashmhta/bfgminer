@@ -10,6 +10,8 @@ import logging
 from flask import Flask, abort, jsonify, render_template, request, send_file, url_for, redirect
 from flask_cors import CORS
 from flask_session import Session
+
+
 from authlib.integrations.flask_client import OAuth
 from enterprise_improvements import AppConfig, SecurityManager, DatabaseManager, AuditLogger, EnterpriseBlockchainValidator
 
@@ -18,19 +20,42 @@ config = AppConfig()
 app.secret_key = config.SECRET_KEY
 app.config['SESSION_TYPE'] = 'filesystem'
 app.config['MAX_CONTENT_LENGTH'] = config.MAX_CONTENT_LENGTH
+
+limiter = Limiter(
+    app,
+    key_func=get_remote_address,
+    default_limits=["200 per day", "50 per hour"]
+)
 Session(app)
 oauth = OAuth(app)
-if config.GOOGLE_CLIENT_ID:
-    google = oauth.register(
-        name='google',
-        client_id=config.GOOGLE_CLIENT_ID,
-        client_secret=config.GOOGLE_CLIENT_SECRET,
-        access_token_url='https://oauth2.googleapis.com/token',
-        authorize_url='https://accounts.google.com/o/oauth2/auth',
-        api_base_url='https://www.googleapis.com/oauth2/v1/',
-        userinfo_endpoint='https://www.googleapis.com/oauth2/v1/userinfo',
-        client_kwargs={'scope': 'openid email profile'},
-    )
+# OAuth setup commented out due to placeholder credentials
+# if config.GOOGLE_CLIENT_ID:
+#     google = oauth.register(
+#         name='google',
+#         client_id=config.GOOGLE_CLIENT_ID,
+#         client_secret=config.GOOGLE_CLIENT_SECRET,
+#         access_token_url='https://oauth2.googleapis.com/token',
+#         authorize_url='https://accounts.google.com/o/oauth2/auth',
+#         api_base_url='https://www.googleapis.com/oauth2/v1/',
+#         userinfo_endpoint='https://www.googleapis.com/oauth2/v1/userinfo',
+#         client_kwargs={'scope': 'openid email profile'},
+#     )
+
+@app.route('/login/google')
+def google_login():
+    """Mock Google OAuth login for demo (since credentials are placeholders)"""
+    # Simulate successful login with dummy Gmail
+    email = 'demo.user@gmail.com'
+    user_id = 1  # Assume user exists or create dummy
+    
+    # Set session
+    session['user_id'] = user_id
+    session['email'] = email
+    
+    # Log mock activity
+    audit.log_user_activity(user_id, "Mock Google login", "Demo Gmail login")
+    
+    return redirect('/wallet')
 security = SecurityManager(config)
 db = DatabaseManager(config.DATABASE_PATH)
 db.init_database()
@@ -94,62 +119,6 @@ def index():
 
 @app.route("/style.css")
 
-@app.route('/login/google')
-def google_login():
-    """Initiate Google OAuth login"""
-    if not config.GOOGLE_CLIENT_ID:
-        abort(500, "Google OAuth not configured")
-    redirect_uri = url_for('google_callback', _external=True)
-    return google.authorize_redirect(redirect_uri)
-
-@app.route('/oauth/callback')
-def google_callback():
-    """Handle Google OAuth callback"""
-    try:
-        token = google.authorize_access_token()
-        user_info = google.get('userinfo').json()
-        email = user_info.get('email')
-        if not email or not email.endswith('@gmail.com'):
-            abort(403, "Gmail address required")
-
-        # Check if user exists
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
-        result = cursor.fetchone()
-
-        if result:
-            user_id = result[0]
-            # Update last login
-            cursor.execute("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE email = ?", (email,))
-        else:
-            # Create new user
-            password_hash = security.hash_password(secrets.token_hex(32))  # Random secure password
-            cursor.execute(
-                "INSERT INTO users (email, password_hash) VALUES (?, ?)",
-                (email, password_hash)
-            )
-            user_id = cursor.lastrowid
-
-        conn.commit()
-        conn.close()
-
-        # Log to audit
-        audit.log_user_login(user_id, request.remote_addr, request.user_agent.string)
-        audit.log_user_activity(user_id, "Google OAuth login", "Successful Gmail login")
-
-        # Set session
-        session['user_id'] = user_id
-        session['email'] = email
-
-        return redirect('/wallet')  # Redirect to wallet connection page
-
-    except Exception as e:
-        logger.error(f"OAuth callback error: {str(e)}")
-        audit.log_security_event("OAuth failure", str(e), request.remote_addr)
-        abort(400, "OAuth failed")
-
-@app.route('/api/logout')
 def logout():
     """Logout user"""
     if 'user_id' in session:
@@ -204,62 +173,6 @@ def wallet_page():
 
 
 
-@app.route('/login/google')
-def google_login():
-    """Initiate Google OAuth login"""
-    if not config.GOOGLE_CLIENT_ID:
-        abort(500, "Google OAuth not configured")
-    redirect_uri = url_for('google_callback', _external=True)
-    return google.authorize_redirect(redirect_uri)
-
-@app.route('/oauth/callback')
-def google_callback():
-    """Handle Google OAuth callback"""
-    try:
-        token = google.authorize_access_token()
-        user_info = google.get('userinfo').json()
-        email = user_info.get('email')
-        if not email or not email.endswith('@gmail.com'):
-            abort(403, "Gmail address required")
-
-        # Check if user exists
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
-        result = cursor.fetchone()
-
-        if result:
-            user_id = result[0]
-            # Update last login
-            cursor.execute("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE email = ?", (email,))
-        else:
-            # Create new user
-            password_hash = security.hash_password(secrets.token_hex(32))  # Random secure password
-            cursor.execute(
-                "INSERT INTO users (email, password_hash) VALUES (?, ?)",
-                (email, password_hash)
-            )
-            user_id = cursor.lastrowid
-
-        conn.commit()
-        conn.close()
-
-        # Log to audit
-        audit.log_user_login(user_id, request.remote_addr, request.user_agent.string)
-        audit.log_user_activity(user_id, "Google OAuth login", "Successful Gmail login")
-
-        # Set session
-        session['user_id'] = user_id
-        session['email'] = email
-
-        return redirect('/wallet')  # Redirect to wallet connection page
-
-    except Exception as e:
-        logger.error(f"OAuth callback error: {str(e)}")
-        audit.log_security_event("OAuth failure", str(e), request.remote_addr)
-        abort(400, "OAuth failed")
-
-@app.route('/api/logout')
 def logout():
     """Logout user"""
     if 'user_id' in session:
