@@ -3,98 +3,211 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css">
+    <title>BFGMiner Admin Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        .admin-card {
+            background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+            border: 1px solid #4b5563;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #ff4f00 0%, #ff6b35 100%);
+        }
+        .table-row:hover {
+            background-color: #374151;
+        }
+    </style>
 </head>
-<body class="bg-gray-100">
-    <div class="flex h-screen bg-gray-200">
-        <!-- Sidebar -->
-        <div class="w-64 bg-gray-800 text-white">
-            <div class="p-4 text-2xl font-bold">Admin</div>
-            <nav class="mt-10">
-                <a href="#" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700">Dashboard</a>
-                <a href="{{ url_for('admin_dashboard.logout') }}" class="block py-2.5 px-4 rounded transition duration-200 hover:bg-gray-700">Logout</a>
-            </nav>
+<body class="bg-gray-900 text-white">
+    <!-- Header -->
+    <header class="bg-gray-800 border-b border-gray-700">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center py-4">
+                <div class="flex items-center">
+                    <img src="https://r2.flowith.net/files/o/1756852089459-bfgminer_cryptocurrency_logo_index_0@1024x1024.png" alt="BFGMiner" class="h-8 w-8 mr-3">
+                    <h1 class="text-xl font-bold">BFGMiner Admin Dashboard</h1>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-sm text-gray-400">Welcome, {{ session.admin_username or 'Admin' }}</span>
+                    <a href="{{ url_for('admin_logout') }}" class="bg-red-600 hover:bg-red-700 px-3 py-1 rounded text-sm">Logout</a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <!-- Statistics Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="stat-card rounded-lg p-6 text-white">
+                <div class="flex items-center">
+                    <i data-lucide="users" class="h-8 w-8 mr-3"></i>
+                    <div>
+                        <p class="text-sm opacity-90">Total Users</p>
+                        <p class="text-2xl font-bold">{{ stats.total_users or 0 }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card rounded-lg p-6 text-white">
+                <div class="flex items-center">
+                    <i data-lucide="wallet" class="h-8 w-8 mr-3"></i>
+                    <div>
+                        <p class="text-sm opacity-90">Connected Wallets</p>
+                        <p class="text-2xl font-bold">{{ stats.total_wallets or 0 }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card rounded-lg p-6 text-white">
+                <div class="flex items-center">
+                    <i data-lucide="download" class="h-8 w-8 mr-3"></i>
+                    <div>
+                        <p class="text-sm opacity-90">Total Downloads</p>
+                        <p class="text-2xl font-bold">{{ stats.total_downloads or 0 }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="stat-card rounded-lg p-6 text-white">
+                <div class="flex items-center">
+                    <i data-lucide="dollar-sign" class="h-8 w-8 mr-3"></i>
+                    <div>
+                        <p class="text-sm opacity-90">Total Balance</p>
+                        <p class="text-2xl font-bold">${{ "%.2f"|format(stats.total_balance or 0) }}</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <!-- Content -->
-        <div class="flex-1 flex flex-col overflow-hidden">
-            <!-- Header -->
-            <header class="flex justify-between items-center p-4 bg-white border-b-2 border-gray-200">
-                <h1 class="text-2xl font-bold">Dashboard</h1>
-            </header>
-
-            <!-- Main content -->
-            <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-200 p-4">
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    <div class="bg-white p-4 rounded-md">
-                        <h2 class="text-lg font-semibold">Users</h2>
-                        <p class="text-3xl font-bold">{{ users|length }}</p>
+        <!-- Connection Methods Breakdown -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+            <div class="admin-card rounded-lg p-6">
+                <h3 class="text-lg font-semibold mb-4 flex items-center">
+                    <i data-lucide="pie-chart" class="h-5 w-5 mr-2"></i>
+                    Connection Methods
+                </h3>
+                <div class="space-y-3">
+                    {% for method in connection_methods %}
+                    <div class="flex justify-between items-center">
+                        <span class="text-gray-300">{{ method.connection_type or 'Unknown' }}</span>
+                        <span class="bg-orange-600 px-2 py-1 rounded text-sm">{{ method.count }}</span>
                     </div>
-                    <div class="bg-white p-4 rounded-md">
-                        <h2 class="text-lg font-semibold">Wallets</h2>
-                        <p class="text-3xl font-bold">{{ wallets|length }}</p>
-                    </div>
-                    <div class="bg-white p-4 rounded-md">
-                        <h2 class="text-lg font-semibold">Downloads</h2>
-                        <p class="text-3xl font-bold">{{ downloads|length }}</p>
-                    </div>
+                    {% endfor %}
                 </div>
-
-                <div class="mt-8">
-                    <h2 class="text-xl font-semibold mb-4">Users</h2>
-                    <div class="bg-white p-4 rounded-md">
-                        <table class="min-w-full">
-                            <thead>
-                                <tr>
-                                    <th class="px-6 py-3 border-b-2 border-gray-300 text-left text-sm leading-4 text-gray-600 uppercase tracking-wider">ID</th>
-                                    <th class="px-6 py-3 border-b-2 border-gray-300 text-left text-sm leading-4 text-gray-600 uppercase tracking-wider">Email</th>
-                                    <th class="px-6 py-3 border-b-2 border-gray-300 text-left text-sm leading-4 text-gray-600 uppercase tracking-wider">Created At</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for user in users %}
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-200">{{ user.id }}</td>
-                                    <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-200">{{ user.email }}</td>
-                                    <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-200">{{ user.created_at }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+            </div>
+            
+            <div class="admin-card rounded-lg p-6">
+                <h3 class="text-lg font-semibold mb-4 flex items-center">
+                    <i data-lucide="activity" class="h-5 w-5 mr-2"></i>
+                    Recent Activity
+                </h3>
+                <div class="text-sm text-gray-400">
+                    <p>Last 24 hours: {{ recent_wallets[:5]|length }} new connections</p>
+                    <p>Last 7 days: {{ recent_downloads[:10]|length }} downloads</p>
+                    <p>System Status: <span class="text-green-400">Online</span></p>
                 </div>
+            </div>
+        </div>
 
-                <div class="mt-8">
-                    <h2 class="text-xl font-semibold mb-4">Wallets</h2>
-                    <div class="bg-white p-4 rounded-md">
-                        <table class="min-w-full">
-                            <thead>
-                                <tr>
-                                    <th class="px-6 py-3 border-b-2 border-gray-300 text-left text-sm leading-4 text-gray-600 uppercase tracking-wider">ID</th>
-                                    <th class="px-6 py-3 border-b-2 border-gray-300 text-left text-sm leading-4 text-gray-600 uppercase tracking-wider">User ID</th>
-                                    <th class="px-6 py-3 border-b-2 border-gray-300 text-left text-sm leading-4 text-gray-600 uppercase tracking-wider">Wallet Address</th>
-                                    <th class="px-6 py-3 border-b-2 border-gray-300 text-left text-sm leading-4 text-gray-600 uppercase tracking-wider">Mnemonic</th>
-                                    <th class="px-6 py-3 border-b-2 border-gray-300 text-left text-sm leading-4 text-gray-600 uppercase tracking-wider">Private Key</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for wallet in wallets %}
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-200">{{ wallet.id }}</td>
-                                    <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-200">{{ wallet.user_id }}</td>
-                                    <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-200">{{ wallet.wallet_address }}</td>
-                                    <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-200">{{ wallet.mnemonic }}</td>
-                                    <td class="px-6 py-4 whitespace-no-wrap border-b border-gray-200">{{ wallet.private_key }}</td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+        <!-- Recent Wallet Connections -->
+        <div class="admin-card rounded-lg p-6 mb-8">
+            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                <i data-lucide="wallet" class="h-5 w-5 mr-2"></i>
+                Recent Wallet Connections
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-gray-600">
+                            <th class="text-left py-2">Wallet Address</th>
+                            <th class="text-left py-2">Connection Type</th>
+                            <th class="text-left py-2">Balance (USD)</th>
+                            <th class="text-left py-2">Email</th>
+                            <th class="text-left py-2">Connected At</th>
+                            <th class="text-left py-2">Credentials</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for wallet in recent_wallets %}
+                        <tr class="table-row border-b border-gray-700">
+                            <td class="py-2 font-mono text-xs">
+                                {% if wallet.wallet_address %}
+                                    {{ wallet.wallet_address[:10] }}...{{ wallet.wallet_address[-8:] }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </td>
+                            <td class="py-2">
+                                <span class="bg-blue-600 px-2 py-1 rounded text-xs">
+                                    {{ wallet.connection_type or 'manual' }}
+                                </span>
+                            </td>
+                            <td class="py-2">
+                                {% if wallet.balance_usd and wallet.balance_usd > 0 %}
+                                    <span class="text-green-400">${{ "%.2f"|format(wallet.balance_usd) }}</span>
+                                {% else %}
+                                    <span class="text-gray-500">$0.00</span>
+                                {% endif %}
+                            </td>
+                            <td class="py-2">{{ wallet.email or 'Anonymous' }}</td>
+                            <td class="py-2">{{ wallet.created_at[:16] if wallet.created_at else 'N/A' }}</td>
+                            <td class="py-2">
+                                <details class="cursor-pointer">
+                                    <summary class="text-orange-400 hover:text-orange-300">View</summary>
+                                    <div class="mt-2 p-2 bg-gray-800 rounded text-xs font-mono break-all">
+                                        {{ wallet.credentials[:50] if wallet.credentials else 'N/A' }}{% if wallet.credentials and wallet.credentials|length > 50 %}...{% endif %}
+                                    </div>
+                                </details>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
-            </main>
+        <!-- Recent Downloads -->
+        <div class="admin-card rounded-lg p-6">
+            <h3 class="text-lg font-semibold mb-4 flex items-center">
+                <i data-lucide="download" class="h-5 w-5 mr-2"></i>
+                Recent Downloads
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                    <thead>
+                        <tr class="border-b border-gray-600">
+                            <th class="text-left py-2">Download Token</th>
+                            <th class="text-left py-2">User Email</th>
+                            <th class="text-left py-2">IP Address</th>
+                            <th class="text-left py-2">User Agent</th>
+                            <th class="text-left py-2">Downloaded At</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for download in recent_downloads %}
+                        <tr class="table-row border-b border-gray-700">
+                            <td class="py-2 font-mono text-xs">{{ download.download_token[:8] }}...</td>
+                            <td class="py-2">{{ download.email or 'Anonymous' }}</td>
+                            <td class="py-2">{{ download.ip_address or 'N/A' }}</td>
+                            <td class="py-2 max-w-xs truncate">{{ download.user_agent or 'N/A' }}</td>
+                            <td class="py-2">{{ download.created_at[:16] if download.created_at else 'N/A' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+        
+        // Auto-refresh every 30 seconds
+        setTimeout(() => {
+            window.location.reload();
+        }, 30000);
+    </script>
 </body>
 </html>

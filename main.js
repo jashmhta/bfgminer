@@ -536,7 +536,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     headers: {
                         'Content-Type': 'application/json',
                         'Authorization': `Bearer ${currentSessionId}`
-                    },
+                    }
+                });
                 
                 const data = await response.json();
                 

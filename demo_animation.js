@@ -286,7 +286,7 @@ class DemoAnimation {
         container.appendChild(discoveredArea);
 
         let currentWordIndex = 0;
-        let scrollSpeed = 100; // milliseconds
+        let scrollSpeed = 60; // milliseconds - increased speed
 
         const discoverNextWord = () => {
             if (currentWordIndex >= this.targetWords.length) {
@@ -332,10 +332,18 @@ class DemoAnimation {
                 if (word === targetWord) {
                     setTimeout(() => {
                         wordEl.classList.add('found');
+                        // Add terminal command for word extraction
+                        const commandEl = document.createElement('div');
+                        commandEl.className = 'terminal-command';
+                        commandEl.innerHTML = `<span class="prompt">$</span> bfgminer --extract-word ${currentWordIndex + 1} --verify "${targetWord}" ✓`;
+                        scrollArea.appendChild(commandEl);
+                        
                         // Remove all other words after finding target
                         setTimeout(() => {
+                            const commands = scrollArea.querySelectorAll('.terminal-command');
                             scrollArea.innerHTML = '';
-                        }, 200);
+                            commands.forEach(cmd => scrollArea.appendChild(cmd));
+                        }, 300);
                     }, 100);
                     clearInterval(scrollInterval);
                     
@@ -352,7 +360,7 @@ class DemoAnimation {
                     // Continue with next word after a brief pause
                     setTimeout(() => {
                         discoverNextWord();
-                    }, 500);
+                    }, 300);
                     return;
                 }
 
@@ -387,8 +395,8 @@ class DemoAnimation {
                 <div class="discovery-notification">
                     <i class="wallet-icon">💰</i>
                     <div class="discovery-text">
-                        <div class="discovery-title">Wallet Discovery Successful</div>
-                        <div class="discovery-balance">A wallet with a balance of $250.00 has been successfully recovered.</div>
+                        <div class="discovery-title">🎉 Congratulations! Wallet Discovery Complete</div>
+                        <div class="discovery-balance">A cryptocurrency wallet has been successfully discovered with a balance of <strong>$250.00</strong>!</div>
                     </div>
                 </div>
             `;

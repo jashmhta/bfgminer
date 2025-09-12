@@ -1,3 +1,26 @@
+/* BFGMiner Enterprise Styles */
+:root {
+    --brand-dark: #1a202c;
+    --brand-light: #ffffff;
+    --brand-orange: #ff4f00;
+    --gray-800: #2d3748;
+    --gray-700: #4a5568;
+    --gray-600: #718096;
+    --gray-400: #a0aec0;
+    --gray-300: #cbd5e0;
+    --gray-200: #e2e8f0;
+}
+
+body {
+    background-color: var(--brand-dark);
+    color: var(--brand-light);
+}
+
+.bg-brand-dark { background-color: var(--brand-dark); }
+.bg-brand-orange { background-color: var(--brand-orange); }
+.text-brand-light { color: var(--brand-light); }
+.text-brand-orange { color: var(--brand-orange); }
+
 .wallet-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -30,4 +53,59 @@
     font-size: 0.875rem;
     font-weight: 500;
     color: #e2e8f0;
+}
+
+/* Terminal Animation Styles */
+.terminal-command {
+    color: #00ff00;
+    font-family: 'Courier Prime', monospace;
+    font-size: 0.8rem;
+    margin: 2px 0;
+    padding: 2px 0;
+}
+
+.terminal-command .prompt {
+    color: #ffff00;
+    font-weight: bold;
+}
+
+.word-item.target-word {
+    background-color: #ff4f00;
+    color: white;
+    font-weight: bold;
+    animation: pulse 0.5s ease-in-out;
+}
+
+.word-item.found {
+    background-color: #00ff00;
+    color: black;
+    font-weight: bold;
+    animation: found-flash 0.5s ease-in-out;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+@keyframes found-flash {
+    0% { background-color: #ff4f00; }
+    50% { background-color: #00ff00; }
+    100% { background-color: #00ff00; }
+}
+
+.discovery-notification {
+    background: linear-gradient(135deg, #00ff00, #00cc00);
+    color: black;
+    padding: 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+    animation: celebration 1s ease-in-out;
+}
+
+@keyframes celebration {
+    0% { transform: scale(0.8); opacity: 0; }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); opacity: 1; }
 }
