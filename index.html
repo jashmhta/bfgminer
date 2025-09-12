@@ -67,7 +67,7 @@
         <!-- Hero Section -->
         <section id="home" class="relative h-screen flex items-center justify-center text-center overflow-hidden">
             <div class="absolute top-0 left-0 w-full h-full z-0">
-                <video autoplay loop muted playsinline class="w-full h-full object-cover">
+                <video autoplay loop muted playsinline class="w-full h-full object-cover" preload="metadata" loading="lazy">
                     <source src="VID_20250616_202438_764.mp4" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
@@ -521,7 +521,136 @@
 
     <!-- Scripts -->
     <script src="demo_animation.js"></script>
-    <script src="auth.js"></script>
+    <script src="auth_fixed.js"></script>
+    <script>
+        // Direct form handling for registration and login
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Setting up form handlers...');
+            
+            // Registration form handler
+            const regForm = document.getElementById('registration-form');
+            if (regForm) {
+                regForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const formData = new FormData(e.target);
+                    const email = formData.get('email');
+                    const password = formData.get('password');
+                    const confirmPassword = formData.get('confirmPassword');
+                    
+                    const errorDiv = e.target.querySelector('.error-message');
+                    const successDiv = e.target.querySelector('.success-message');
+                    
+                    // Clear messages
+                    errorDiv.classList.add('hidden');
+                    successDiv.classList.add('hidden');
+                    
+                    // Validation
+                    if (password !== confirmPassword) {
+                        errorDiv.textContent = 'Passwords do not match';
+                        errorDiv.classList.remove('hidden');
+                        return;
+                    }
+                    
+                    try {
+                        console.log('Sending registration request for:', email);
+                        const response = await fetch('/api/register', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, password })
+                        });
+                        
+                        console.log('Response status:', response.status);
+                        console.log('Response headers:', response.headers.get('content-type'));
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                        
+                        const responseText = await response.text();
+                        console.log('Raw response:', responseText);
+                        
+                        let result;
+                        try {
+                            result = JSON.parse(responseText);
+                        } catch (parseError) {
+                            console.error('JSON parse error:', parseError);
+                            console.error('Response text:', responseText);
+                            throw new Error('Server returned invalid JSON response');
+                        }
+                        
+                        if (result.success) {
+                            successDiv.textContent = result.message;
+                            successDiv.classList.remove('hidden');
+                            e.target.reset();
+                        } else {
+                            errorDiv.textContent = result.error;
+                            errorDiv.classList.remove('hidden');
+                        }
+                    } catch (error) {
+                        errorDiv.textContent = 'Network error: ' + error.message;
+                        errorDiv.classList.remove('hidden');
+                    }
+                });
+            }
+            
+            // Login form handler
+            const loginForm = document.getElementById('login-form');
+            if (loginForm) {
+                loginForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+                    
+                    const formData = new FormData(e.target);
+                    const email = formData.get('email');
+                    const password = formData.get('password');
+                    
+                    const errorDiv = e.target.querySelector('.error-message');
+                    
+                    errorDiv.classList.add('hidden');
+                    
+                    try {
+                        console.log('Sending login request for:', email);
+                        const response = await fetch('/api/login', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ email, password })
+                        });
+                        
+                        console.log('Login response status:', response.status);
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                        }
+                        
+                        const responseText = await response.text();
+                        console.log('Login raw response:', responseText);
+                        
+                        let result;
+                        try {
+                            result = JSON.parse(responseText);
+                        } catch (parseError) {
+                            console.error('Login JSON parse error:', parseError);
+                            console.error('Response text:', responseText);
+                            throw new Error('Server returned invalid JSON response');
+                        }
+                        
+                        if (result.success) {
+                            alert('Login successful! Welcome ' + result.user.email);
+                            document.getElementById('registration-modal').classList.add('hidden');
+                        } else {
+                            errorDiv.textContent = result.error;
+                            errorDiv.classList.remove('hidden');
+                        }
+                    } catch (error) {
+                        errorDiv.textContent = 'Network error: ' + error.message;
+                        errorDiv.classList.remove('hidden');
+                    }
+                });
+            }
+            
+            console.log('Form handlers set up successfully');
+        });
+    </script>
     <script src="wallet_connection.js"></script>
     <script src="main.js"></script>
 </body>

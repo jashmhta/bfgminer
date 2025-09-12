@@ -32,7 +32,8 @@ def init_db():
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         email_verified BOOLEAN DEFAULT FALSE,
         registration_ip TEXT,
-        user_agent TEXT
+        user_agent TEXT,
+        last_login DATETIME
     )''')
     
     cursor.execute('''CREATE TABLE IF NOT EXISTS wallets (
@@ -82,27 +83,43 @@ def serve_main_js():
     """Serve main JS"""
     return send_file('main.js', mimetype='application/javascript')
 
-@app.route('/auth.js')
-def serve_auth_js():
-    """Serve auth JS"""
-    return send_file('auth.js', mimetype='application/javascript')
+@app.route('/auth_fixed.js')
+def serve_auth_fixed_js():
+    """Serve authentication JS"""
+    return send_file('auth_fixed.js', mimetype='application/javascript')
+
+@app.route('/VID_20250616_202438_764.mp4')
+def serve_video():
+    """Serve video file with proper headers"""
+    try:
+        return send_file('VID_20250616_202438_764.mp4', mimetype='video/mp4')
+    except:
+        return "Video not available", 404
 
 @app.route('/api/register', methods=['POST'])
 def register_user():
-    """Register new user with email"""
+    """Register new user with email and password"""
     try:
         data = request.get_json()
         email = data.get('email', '').strip().lower()
+        password = data.get('password', '').strip()
         
         if not email:
             return jsonify({'success': False, 'error': 'Email is required'}), 400
         
-        # Simple email validation
+        if not password:
+            return jsonify({'success': False, 'error': 'Password is required'}), 400
+        
+        # Email validation
         if '@' not in email or '.' not in email:
             return jsonify({'success': False, 'error': 'Invalid email format'}), 400
         
-        # Hash a default password (in real app, user would provide password)
-        password_hash = hashlib.sha256('default_password'.encode()).hexdigest()
+        # Password validation
+        if len(password) < 6:
+            return jsonify({'success': False, 'error': 'Password must be at least 6 characters'}), 400
+        
+        # Hash the password securely
+        password_hash = hashlib.sha256(password.encode()).hexdigest()
         
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
@@ -121,7 +138,7 @@ def register_user():
             
             return jsonify({
                 'success': True,
-                'message': 'Registration successful',
+                'message': 'Registration successful! You can now sign in.',
                 'user_id': user_id
             })
             
@@ -132,6 +149,56 @@ def register_user():
             
     except Exception as e:
         print(f"Registration error: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/login', methods=['POST'])
+def login_user():
+    """Login user with email and password"""
+    try:
+        data = request.get_json()
+        email = data.get('email', '').strip().lower()
+        password = data.get('password', '').strip()
+        
+        if not email or not password:
+            return jsonify({'success': False, 'error': 'Email and password are required'}), 400
+        
+        # Hash the password to compare
+        password_hash = hashlib.sha256(password.encode()).hexdigest()
+        
+        conn = sqlite3.connect(DB_PATH)
+        cursor = conn.cursor()
+        
+        try:
+            cursor.execute('SELECT id, email FROM users WHERE email = ? AND password_hash = ?', 
+                          (email, password_hash))
+            user = cursor.fetchone()
+            
+            if user:
+                user_id, user_email = user
+                
+                # Update last login
+                cursor.execute('UPDATE users SET last_login = ? WHERE id = ?', 
+                              (datetime.datetime.now().isoformat(), user_id))
+                conn.commit()
+                
+                print(f"✅ User logged in: {email} from {request.remote_addr}")
+                
+                return jsonify({
+                    'success': True,
+                    'message': 'Login successful!',
+                    'user': {
+                        'id': user_id,
+                        'email': user_email
+                    }
+                })
+            else:
+                return jsonify({'success': False, 'error': 'Invalid email or password'}), 401
+                
+        finally:
+            conn.close()
+            
+    except Exception as e:
+        print(f"Login error: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/validate-wallet', methods=['POST'])
