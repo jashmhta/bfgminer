@@ -5,12 +5,7 @@ Enterprise Monitoring and Health Checks
 import sqlite3
 import time
 from dataclasses import dataclass
-from datetime 
-
-import datetime
-from datetime import UTC
-
-from datetime import UTC
+from datetime import datetime, UTC
 
 from typing import Any, Dict, List
 
@@ -102,7 +97,7 @@ class DatabaseMonitor:
                         "download_count": download_count,
                         "db_size": self._get_db_size(),
                     },
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(UTC),
                 )
 
         except Exception as e:
@@ -112,7 +107,7 @@ class DatabaseMonitor:
                 status="unhealthy",
                 response_time=response_time,
                 details={"error": str(e)},
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(UTC),
             )
 
     def _get_db_size(self) -> int:
@@ -167,7 +162,7 @@ class BlockchainMonitor:
                                 status="healthy",
                                 response_time=response_time,
                                 details={"block_number": block_number, "endpoint": url},
-                                timestamp=datetime.utcnow(),
+                                timestamp=datetime.now(UTC),
                             )
                         )
                     else:
@@ -183,7 +178,7 @@ class BlockchainMonitor:
                         status="unhealthy",
                         response_time=response_time,
                         details={"error": str(e), "endpoint": url},
-                        timestamp=datetime.utcnow(),
+                        timestamp=datetime.now(UTC),
                     )
                 )
 
@@ -209,7 +204,7 @@ class ExternalServiceMonitor:
                     status="healthy",
                     response_time=response_time,
                     details=data,
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(UTC),
                 )
             else:
                 raise Exception(f"HTTP {response.status_code}")
@@ -221,7 +216,7 @@ class ExternalServiceMonitor:
                 status="unhealthy",
                 response_time=response_time,
                 details={"error": str(e)},
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(UTC),
             )
 
     def check_github_api(self) -> HealthStatus:
@@ -246,7 +241,7 @@ class ExternalServiceMonitor:
                         "updated_at": data.get("updated_at"),
                         "size": data.get("size"),
                     },
-                    timestamp=datetime.utcnow(),
+                    timestamp=datetime.now(UTC),
                 )
             else:
                 raise Exception(f"HTTP {response.status_code}")
@@ -258,7 +253,7 @@ class ExternalServiceMonitor:
                 status="unhealthy",
                 response_time=response_time,
                 details={"error": str(e)},
-                timestamp=datetime.utcnow(),
+                timestamp=datetime.now(UTC),
             )
 
 
