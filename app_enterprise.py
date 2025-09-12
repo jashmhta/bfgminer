@@ -14,30 +14,15 @@ from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 from authlib.integrations.flask_client import OAuth
 from enterprise_improvements import AppConfig, SecurityManager, DatabaseManager, AuditLogger, EnterpriseBlockchainValidator
 
 
-
-
-
-
-
-
-
-app = Flask(__name__, static_folder=".", static_url_path="", template_folder="templates")
+app = Flask(
+    __name__,
+    static_folder=".",
+    static_url_path="",
+     template_folder="templates")
 config = AppConfig()
 app.secret_key = config.SECRET_KEY
 app.config['SESSION_TYPE'] = 'filesystem'
@@ -63,21 +48,24 @@ oauth = OAuth(app)
 #         client_kwargs={'scope': 'openid email profile'},
 #     )
 
+
 @app.route('/login/google')
 def google_login():
     """Mock Google OAuth login for demo (since credentials are placeholders)"""
     # Simulate successful login with dummy Gmail
     email = 'demo.user@gmail.com'
     user_id = 1  # Assume user exists or create dummy
-    
+
     # Set session
     session['user_id'] = user_id
     session['email'] = email
-    
+
     # Log mock activity
     audit.log_user_activity(user_id, "Mock Google login", "Demo Gmail login")
-    
+
     return redirect('/wallet')
+
+
 security = SecurityManager(config)
 db = DatabaseManager(config.DATABASE_PATH)
 db.init_database()
@@ -143,14 +131,19 @@ def index():
 def serve_css():
     return send_file("style.css", mimetype="text/css")
 
+
 @app.route('/logout')
 def logout():
     """Logout user"""
     if 'user_id' in session:
-        audit.log_user_activity(session['user_id'], "Logout", "User logged out")
+        audit.log_user_activity(
+    session['user_id'],
+    "Logout",
+     "User logged out")
         session.pop('user_id', None)
         session.pop('email', None)
     return redirect('/')
+
 
 @app.route('/admin', methods=['GET', 'POST'])
 def admin_dashboard():
@@ -183,7 +176,12 @@ def admin_dashboard():
 
     conn.close()
 
-    return render_template('admin.html', users=users, wallets=wallets, audit_logs=audit_logs)
+    return render_template(
+    'admin.html',
+    users=users,
+    wallets=wallets,
+     audit_logs=audit_logs)
+
 
 @app.route('/wallet')
 def wallet_page():
@@ -193,17 +191,8 @@ def wallet_page():
     return render_template('wallet.html')
 
 
-
-
-
-
-
-
-
 @app.route("/api/register", methods=["POST"])
-
 @app.route("/api/register", methods=["POST"])
-
 def register_user():
     """Register new user with email and password"""
     try:
@@ -250,15 +239,23 @@ def register_user():
         cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
         if cursor.fetchone():
             conn.close()
-            return jsonify({"success": False, "error": "User already exists"}), 400
+            return jsonify(
+                {"success": False, "error": "User already exists"}), 400
         # Insert new user
-        cursor.execute("INSERT INTO users (email, password_hash) VALUES (?, ?)", (email, password_hash))
+        cursor.execute(
+    "INSERT INTO users (email, password_hash) VALUES (?, ?)",
+    (email,
+     password_hash))
         user_id = cursor.lastrowid
         conn.commit()
         conn.close()
         # Log registration
-        audit.log_user_activity(user_id, "Registration", f"New user registered: {email}")
-        return jsonify({"success": True, "user_id": user_id, "message": "Registration successful"})
+        audit.log_user_activity(
+    user_id,
+    "Registration",
+     f"New user registered: {email}")
+        return jsonify({"success": True, "user_id": user_id,
+                       "message": "Registration successful"})
     except Exception as e:
         print(f"Registration error: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
@@ -297,14 +294,28 @@ def login_user():
             user = cursor.fetchone()
 
             if user:
-	                session['user_id'] = user[0]
-	                session['email'] = user[1]
-	                audit.log_user_activity(user[0], "Login", "User logged in")
-	                conn.close()
-	                return jsonify({"success": True, "message": "Login successful"})
-	            else:
-	                conn.close()
-	                return jsonify({"success": False, "error": "Invalid credentials"}), 401
+                    session['user_id'] = user[0]
+                    session['email'] = user[1]
+                    audit.log_user_activity(user[0], "Login", "User logged in")
+                    conn.close()
+                    return jsonify(
+                        {"success": True, "message": "Login successful"})
+            else:
+                conn.close()
+                return jsonify({"success": False, "error": "Invalid credentials"}), 401
+
+        except Exception as e:
+            print(f"Database error: {e}")
+            conn.close()
+            return jsonify({"success": False, "error": str(e)}), 500
+
+    except Exception as e:
+        print(f"Login error: {e}")
+        if 'conn' in locals():
+            conn.close()
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 
 @app.route("/api/validate-wallet", methods=["POST"])
 def validate_wallet():
