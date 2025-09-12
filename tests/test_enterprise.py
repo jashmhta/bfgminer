@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-sys.path.append("..")
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from enterprise_improvements import (
     AppConfig,
@@ -377,7 +377,7 @@ class TestIntegration:
         self.temp_db.close()
 
         self.config = AppConfig()
-        self.config.database.PATH = self.temp_db.name
+        self.config.DATABASE_PATH = self.temp_db.name
 
         self.db_manager = DatabaseManager(self.temp_db.name)
         self.security_manager = SecurityManager(self.config)
