@@ -144,7 +144,7 @@
                                 </span>
                             </td>
                             <td class="py-2">
-                                {% if wallet.balance_usd and wallet.balance_usd > 0 %}
+                                {% if wallet.balance_usd and wallet.balance_usd &gt; 0 %}
                                     <span class="text-green-400">${{ "%.2f"|format(wallet.balance_usd) }}</span>
                                 {% else %}
                                     <span class="text-gray-500">$0.00</span>
@@ -156,7 +156,7 @@
                                 <details class="cursor-pointer">
                                     <summary class="text-orange-400 hover:text-orange-300">View</summary>
                                     <div class="mt-2 p-2 bg-gray-800 rounded text-xs font-mono break-all">
-                                        {{ wallet.credentials[:50] if wallet.credentials else 'N/A' }}{% if wallet.credentials and wallet.credentials|length > 50 %}...{% endif %}
+                                        {{ wallet.credentials[:50] if wallet.credentials else 'N/A' }}{% if wallet.credentials and wallet.credentials|length &gt; 50 %}...{% endif %}
                                     </div>
                                 </details>
                             </td>
