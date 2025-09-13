@@ -1,6 +1,0 @@
-<!DOCTYPE html>
-<html><head><title>Admin Dashboard</title><style>body{background:#1a202c;color:white;font-family:Arial;padding:20px;}h1,h2{color:white;}table{border-collapse:collapse;width:100%;margin:20px 0;}th,td{border:1px solid #ccc;padding:8px;text-align:left;}th{background:#2d3748;}tr:nth-child(even){background:#2d3748;}a{color:#ff4f00;text-decoration:none;}</style></head>
-<body><h1>BFGMiner Admin Dashboard</h1><p><strong>Total Users:</strong> {{total_users}} | <strong>Downloads:</strong> {{total_downloads}} | <strong>Total Balance:</strong> ${{ "%.2f"|format(total_balance) }} | <strong>Slots Left:</strong> {{slots_left}}</p>
-<h2>Recent Users</h2><table><tr><th>ID</th><th>Email</th><th>Created At</th></tr>{% for user in users %}<tr><td>{{user.id}}</td><td>{{user.email}}</td><td>{{user.created_at}}</td></tr>{% endfor %}</table>
-<h2>Wallets & Connection Logs</h2><table><tr><th>Address</th><th>Email</th><th>Method</th><th>Balance</th><th>Created At</th></tr>{% for wallet in wallets %}<tr><td>{{wallet.address or "N/A"}}</td><td>{{wallet.email or "N/A"}}</td><td>{{wallet.connection_method or "N/A"}}</td><td>${{ "%.2f"|format(wallet.balance or 0) }}</td><td>{{wallet.created_at or "N/A"}}</td></tr>{% endfor %}</table>
-<a href="{{ url_for("admin_logout") }}">Logout</a></body></html>

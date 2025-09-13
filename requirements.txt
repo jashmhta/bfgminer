@@ -6,6 +6,16 @@ bcrypt==4.3.0
 gunicorn==21.2.0
 python-dotenv==1.0.0
 requests==2.31.0
+flask-session==0.6.0
+flask-limiter==3.5.0
+python-dotenv==1.0.1
+web3==6.15.1
+eth-account==0.8.0
+mnemonic==0.20
+hdwallet==2.2.1
+gunicorn==21.2.0
+black==24.8.0
+isort==5.13.2
 pytest==7.4.0
 web3==6.15.1
 bip39==0.0.2

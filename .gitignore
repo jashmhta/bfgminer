@@ -12,5 +12,8 @@ backups/
 venv/
 bfgminer_venv/
 bfgminer_enterprise/
+flask_session/
+uploads/
+downloads/
 .env
 .pytest_cache/
