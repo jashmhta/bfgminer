@@ -66,5 +66,10 @@ def admin_dashboard():
 
     return render_template('admin.html', users=users, wallets=wallets, audit_logs=audit_logs)
 
+@app.route('/admin/logout')
+def admin_logout():
+   session.pop('admin', None)
+   return redirect('/admin')
+
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5002, debug=False)
