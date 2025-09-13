@@ -4,13 +4,17 @@ Admin Dashboard Server for BFGMiner - Runs on Port 5002
 """
 import os
 import sqlite3
-from flask import Flask, request, render_template, abort, session, redirect
+from flask import Flask, request, render_template, abort, session, redirect, send_file
 from dotenv import load_dotenv
 from enterprise_improvements import AppConfig, DatabaseManager, AuditLogger
 
 load_dotenv()
 
 app = Flask(__name__, template_folder="templates")
+
+@app.route('/style.css')
+def admin_style():
+    return send_file('style.css', mimetype='text/css')
 app.secret_key = AppConfig().SECRET_KEY  # Reuse config
 DB_PATH = AppConfig().DATABASE_PATH
 ADMIN_PASSWORD = os.getenv("ADMIN_PASSWORD", "BFGMiner@Admin2025!")
