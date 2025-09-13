@@ -9,6 +9,7 @@ bfgminer_simple.db
 logs/
 backups/
 *.mp4
+!VID_20250616_202438_764.mp4
 venv/
 bfgminer_venv/
 bfgminer_enterprise/
