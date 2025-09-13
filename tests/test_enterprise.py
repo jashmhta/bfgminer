@@ -12,14 +12,20 @@ import pytest
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from enterprise_improvements import DatabaseManager  # noqa: E402
-from enterprise_improvements import (AppConfig, AuditLogger,  # noqa: E402
-                                     EnterpriseBlockchainValidator,
-                                     SecurityManager)
+from enterprise_improvements import (
+    AppConfig,
+    AuditLogger,  # noqa: E402
+    EnterpriseBlockchainValidator,
+    SecurityManager,
+)
 from error_handler import BFGMinerException  # noqa: E402
-from error_handler import (AuthenticationError, BlockchainError,  # noqa: E402
-                           ErrorCode, ValidationError)
-from monitoring import (DatabaseMonitor,  # noqa: E402 # noqa: E402
-                        SystemMonitor)
+from error_handler import (
+    AuthenticationError,
+    BlockchainError,  # noqa: E402
+    ErrorCode,
+    ValidationError,
+)
+from monitoring import DatabaseMonitor, SystemMonitor  # noqa: E402 # noqa: E402
 
 
 class TestSecurityManager:

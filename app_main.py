@@ -10,17 +10,29 @@ import sqlite3
 
 from authlib.integrations.flask_client import OAuth
 from eth_account import Account
-from flask import (Flask, abort, jsonify, redirect, render_template, request,
-                   send_file, session, url_for)
+from flask import (
+    Flask,
+    abort,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    send_file,
+    session,
+    url_for,
+)
 from flask_caching import Cache
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 
 from config import AppConfig
-from enterprise_improvements import (AuditLogger, DatabaseManager,
-                                     EnterpriseBlockchainValidator,
-                                     SecurityManager)
+from enterprise_improvements import (
+    AuditLogger,
+    DatabaseManager,
+    EnterpriseBlockchainValidator,
+    SecurityManager,
+)
 from flask_session import Session
 from utils import get_db_connection
 
