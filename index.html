@@ -776,6 +776,15 @@
                 document.querySelectorAll('.demo-trigger, #download-cta, .download-cta').forEach(function(el){
                     el.addEventListener('click', function(e){ e.preventDefault(); openDemo(); });
                 });
+                // Ensure Download Now (in overlay) opens registration modal
+                const downloadNowBtn = document.getElementById('download-now-btn');
+                if (downloadNowBtn) {
+                    downloadNowBtn.addEventListener('click', function(e){
+                        e.preventDefault();
+                        const modal = document.getElementById('registration-modal');
+                        if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+                    });
+                }
                 // Background video performance helpers
                 const video = document.getElementById('hero-video');
                 if (video) {
