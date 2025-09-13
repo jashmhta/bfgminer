@@ -4,6 +4,7 @@ Flask wrapper for BFGMiner Node.js application.
 This serves as a deployment wrapper to make the app compatible with Flask deployment. # noqa: E501
 """
 
+import atexit
 import os
 import signal
 import subprocess
@@ -11,7 +12,6 @@ import time
 
 from flask import Flask, jsonify, send_from_directory
 from flask_cors import CORS
-import atexit
 
 app = Flask(__name__, static_folder=".")
 CORS(app)
@@ -94,9 +94,7 @@ def health_check():
             "status": "healthy",
             "service": "BFGMiner Web Application",
             "node_server": (
-                "running"
-                if node_process and node_process.poll() is None
-                else "stopped"
+                "running" if node_process and node_process.poll() is None else "stopped"
             ),
         }
     )

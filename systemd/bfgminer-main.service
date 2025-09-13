@@ -1,0 +1,13 @@
+[Unit]
+Description=BFGMiner Main (Gunicorn)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/bfgminer
+Environment="PATH=%h/bfgminer/venv/bin"
+ExecStart=%h/bfgminer/venv/bin/gunicorn -c gunicorn.conf.py app_main:app
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

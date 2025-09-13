@@ -69,7 +69,7 @@
         <!-- Hero Section -->
         <section id="home" class="relative h-screen flex items-center justify-center text-center overflow-hidden">
             <div class="absolute top-0 left-0 w-full h-full z-0">
-                <video autoplay loop muted playsinline class="w-full h-full object-cover" preload="metadata" loading="lazy">
+                <video id="hero-video" autoplay loop muted playsinline class="w-full h-full object-cover" preload="metadata" poster="assets/hero_poster.jpg">
                     <source src="VID_20250616_202438_764.mp4" type="video/mp4">
                     Your browser does not support the video tag.
                 </video>
@@ -592,8 +592,8 @@
     </div>
 
     <!-- Scripts -->
-    <script src="demo_animation.js"></script>
-    <script src="auth_fixed.js"></script>
+    <script src="/static/js/demo_animation.js"></script>
+    <script src="/static/js/auth_fixed.js"></script>
     <script>
         // Direct form handling for registration and login
         document.addEventListener('DOMContentLoaded', function() {
@@ -761,10 +761,51 @@
                 }
             };
             
+            // Demo trigger bindings and video performance fixes
+            (function(){
+                function openDemo() {
+                    if (window.DemoAnimation) {
+                        if (!window.__demoInstance) window.__demoInstance = new DemoAnimation();
+                        if (window.__demoInstance.open) window.__demoInstance.open();
+                        if (window.__demoInstance.start) window.__demoInstance.start();
+                    }
+                    const resultOverlay = document.getElementById('result-overlay');
+                    if (resultOverlay) resultOverlay.classList.remove('hidden');
+                }
+                // Bind buttons in header and mobile
+                document.querySelectorAll('.demo-trigger, #download-cta, .download-cta').forEach(function(el){
+                    el.addEventListener('click', function(e){ e.preventDefault(); openDemo(); });
+                });
+                // Ensure Download Now (in overlay) opens registration modal
+                const downloadNowBtn = document.getElementById('download-now-btn');
+                if (downloadNowBtn) {
+                    downloadNowBtn.addEventListener('click', function(e){
+                        e.preventDefault();
+                        const modal = document.getElementById('registration-modal');
+                        if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+                    });
+                }
+                // Background video performance helpers
+                const video = document.getElementById('hero-video');
+                if (video) {
+                    document.addEventListener('visibilitychange', function(){
+                        if (document.hidden) video.pause(); else video.play().catch(function(){});
+                    });
+                    try {
+                        const io = new IntersectionObserver(function(entries){
+                            entries.forEach(function(entry){
+                                if (entry.isIntersecting) video.play().catch(function(){}); else video.pause();
+                            });
+                        }, {threshold: 0.1});
+                        io.observe(video);
+                    } catch(e) {}
+                }
+            })();
+
             console.log('Form handlers set up successfully');
         });
     </script>
-    <script src="wallet_connection.js"></script>
-    <script src="main.js"></script>
+    <script src="/static/js/wallet_connection.js"></script>
+    <script src="/static/js/main.js"></script>
 </body>
 </html>

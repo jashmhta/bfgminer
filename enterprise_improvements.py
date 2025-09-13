@@ -14,18 +14,19 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional
 
 import bcrypt
+import psutil
 from dotenv import load_dotenv
-from flask import (Flask, abort, request)
+from eth_account import Account
+from flask import Flask, abort, request
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
+from mnemonic import Mnemonic
 from web3 import Web3
 from web3.providers import HTTPProvider
-from mnemonic import Mnemonic
-from eth_account import Account
-import psutil
 
 from blockchain_validator import BlockchainValidator
+from config import AppConfig
 
 # Configure enterprise logging
 logging.basicConfig(
@@ -38,51 +39,26 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 
-@dataclass
-class AppConfig:
-    """Enterprise configuration management"""
-
-    SECRET_KEY: str = os.getenv("FLASK_SECRET_KEY", secrets.token_hex(32))
-    DATABASE_PATH: str = os.getenv("DATABASE_PATH", "bfgminer_enterprise.db")
-    DEBUG: bool = os.getenv("DEBUG", "False").lower() == "true"
-    HOST: str = os.getenv("HOST", "0.0.0.0")
-    PORT: int = int(os.getenv("PORT", "5001"))
-    RATE_LIMIT: str = os.getenv("RATE_LIMIT", "100 per hour")
-    SESSION_TIMEOUT: int = int(os.getenv("SESSION_TIMEOUT", "3600"))  # 1 hour
-    MAX_CONTENT_LENGTH: int = int(os.getenv("MAX_CONTENT_LENGTH", "16777216"))  # 16MB
-
-    # Blockchain configuration
-    ETHEREUM_RPC_URLS: List[str] = field(default_factory=lambda: [
-        "https://cloudflare-eth.com",
-        "https://rpc.ankr.com/eth",
-        "https://eth-mainnet.public.blastapi.io",
-        "https://ethereum.publicnode.com",
-    ])
-    # Security configuration
-    BCRYPT_ROUNDS: int = 12
-    MAX_LOGIN_ATTEMPTS: int = 5
-
-    GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID", "")
-    GOOGLE_CLIENT_SECRET: str = os.getenv("GOOGLE_CLIENT_SECRET", "")
-
-
 class SecurityManager:
     def __init__(self, config):
         self.config = config
         self.failed_attempts = {}
 
     def hash_password(self, password):
-        return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt(rounds=self.config.BCRYPT_ROUNDS))
+        return bcrypt.hashpw(
+            password.encode("utf-8"),
+            bcrypt.gensalt(rounds=self.config.security.BCRYPT_ROUNDS),
+        )
 
     def verify_password(self, password, hashed):
-        return bcrypt.checkpw(password.encode('utf-8'), hashed)
+        return bcrypt.checkpw(password.encode("utf-8"), hashed)
 
     def record_failed_attempt(self, identifier):
         self.failed_attempts[identifier] = self.failed_attempts.get(identifier, 0) + 1
 
     def is_locked_out(self, identifier):
         attempts = self.failed_attempts.get(identifier, 0)
-        return attempts >= self.config.MAX_LOGIN_ATTEMPTS
+        return attempts >= self.config.security.MAX_LOGIN_ATTEMPTS
 
     def clear_failed_attempts(self, identifier):
         self.failed_attempts.pop(identifier, None)
@@ -92,17 +68,21 @@ class SecurityManager:
 
     def validate_input(self, value, field_type):
         import re
+
         if field_type == "email":
             return bool(re.match(r"[^@]+@[^@]+\.[^@]+", value))
         elif field_type == "private_key":
             if value.startswith("0x"):
                 value = value[2:]
-            return len(value) == 64 and all(c in '0123456789abcdefABCDEF' for c in value)
+            return len(value) == 64 and all(
+                c in "0123456789abcdefABCDEF" for c in value
+            )
         elif field_type == "wallet_address":
             if not value.startswith("0x") or len(value) != 42:
                 return False
-            return all(c in '0123456789abcdefABCDEF' for c in value[2:])
+            return all(c in "0123456789abcdefABCDEF" for c in value[2:])
         return False
+
 
 class DatabaseManager:
     def __init__(self, db_path):
@@ -112,21 +92,26 @@ class DatabaseManager:
     def init_database(self):
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
-        cursor.execute('''CREATE TABLE IF NOT EXISTS users (
+        cursor.execute(
+            """CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             email TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        )''')
-        cursor.execute('''CREATE TABLE IF NOT EXISTS sessions (
+        )"""
+        )
+        cursor.execute(
+            """CREATE TABLE IF NOT EXISTS sessions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
             session_token TEXT UNIQUE NOT NULL,
             expires_at TIMESTAMP NOT NULL,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-        )''')
-        cursor.execute('''CREATE TABLE IF NOT EXISTS wallets (
+        )"""
+        )
+        cursor.execute(
+            """CREATE TABLE IF NOT EXISTS wallets (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
             wallet_address TEXT UNIQUE NOT NULL,
@@ -134,16 +119,20 @@ class DatabaseManager:
             is_validated BOOLEAN DEFAULT FALSE,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-        )''')
-        cursor.execute('''CREATE TABLE IF NOT EXISTS downloads (
+        )"""
+        )
+        cursor.execute(
+            """CREATE TABLE IF NOT EXISTS downloads (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
             file_name TEXT NOT NULL,
             download_url TEXT,
             created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
-        )''')
-        cursor.execute('''CREATE TABLE IF NOT EXISTS audit_logs (
+        )"""
+        )
+        cursor.execute(
+            """CREATE TABLE IF NOT EXISTS audit_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
             action TEXT NOT NULL,
@@ -154,19 +143,23 @@ class DatabaseManager:
             risk_level TEXT,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
-        )''')
-        cursor.execute('''CREATE TABLE IF NOT EXISTS security_events (
+        )"""
+        )
+        cursor.execute(
+            """CREATE TABLE IF NOT EXISTS security_events (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             event_type TEXT NOT NULL,
             severity TEXT NOT NULL,
             source_ip TEXT,
             details TEXT,
             timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
-        )''')
+        )"""
+        )
         conn.commit()
         conn.close()
 
     from contextlib import contextmanager
+
     @contextmanager
     def get_connection(self):
         conn = sqlite3.connect(self.db_path)
@@ -180,21 +173,44 @@ class DatabaseManager:
         finally:
             conn.close()
 
+
 class AuditLogger:
     def __init__(self, db_manager):
         self.db_manager = db_manager
 
-    def log_action(self, user_id, action, resource_type=None, resource_id=None, details=None, ip_address=None, risk_level=None):
+    def log_action(
+        self,
+        user_id,
+        action,
+        resource_type=None,
+        resource_id=None,
+        details=None,
+        ip_address=None,
+        risk_level=None,
+    ):
         with self.db_manager.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO audit_logs (user_id, action, resource_type, resource_id, details, ip_address, risk_level) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                           (user_id, action, resource_type, resource_id, json.dumps(details or {}), ip_address, risk_level))
+            cursor.execute(
+                "INSERT INTO audit_logs (user_id, action, resource_type, resource_id, details, ip_address, risk_level) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (
+                    user_id,
+                    action,
+                    resource_type,
+                    resource_id,
+                    json.dumps(details or {}),
+                    ip_address,
+                    risk_level,
+                ),
+            )
 
     def log_security_event(self, event_type, severity, source_ip=None, details=None):
         with self.db_manager.get_connection() as conn:
             cursor = conn.cursor()
-            cursor.execute("INSERT INTO security_events (event_type, severity, source_ip, details) VALUES (?, ?, ?, ?)",
-                           (event_type, severity, source_ip, json.dumps(details or {})))
+            cursor.execute(
+                "INSERT INTO security_events (event_type, severity, source_ip, details) VALUES (?, ?, ?, ?)",
+                (event_type, severity, source_ip, json.dumps(details or {})),
+            )
+
 
 class EnterpriseBlockchainValidator:
     def __init__(self, config):
@@ -202,7 +218,7 @@ class EnterpriseBlockchainValidator:
         self.w3 = None
 
     def connect_to_blockchain(self):
-        for url in self.config.ETHEREUM_RPC_URLS:
+        for url in self.config.blockchain.ETHEREUM_RPC_URLS:
             try:
                 self.w3 = Web3(Web3.HTTPProvider(url))
                 if self.w3.is_connected():
@@ -226,14 +242,14 @@ class EnterpriseBlockchainValidator:
         except:
             return None
 
-    def get_balance(self, address, chain='ethereum'):
+    def get_balance(self, address, chain="ethereum"):
         if not self.w3:
             self.connect_to_blockchain()
         if not self.w3:
             return None
         try:
             balance_wei = self.w3.eth.get_balance(address)
-            balance_eth = self.w3.from_wei(balance_wei, 'ether')
+            balance_eth = self.w3.from_wei(balance_wei, "ether")
             # Placeholder ETH price; in production, fetch from API
             eth_price = 2500.0
             balance_usd = float(balance_eth) * eth_price
@@ -244,7 +260,7 @@ class EnterpriseBlockchainValidator:
 
     def validate_private_key(self, private_key):
         try:
-            if private_key.startswith('0x'):
+            if private_key.startswith("0x"):
                 private_key = private_key[2:]
             if len(private_key) != 64:
                 return {"valid": False, "message": "Invalid length"}

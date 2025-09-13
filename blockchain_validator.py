@@ -5,10 +5,10 @@ Blockchain validation utilities for wallet connections
 import re
 
 import requests
-from mnemonic import Mnemonic
 from eth_account import Account
-from web3 import Web3
 from hdwallet import HDWallet
+from mnemonic import Mnemonic
+from web3 import Web3
 
 
 class BlockchainValidator:
@@ -82,7 +82,7 @@ class BlockchainValidator:
                 return {"valid": False, "error": "Invalid mnemonic phrase"}
 
             # Derive first account from mnemonic using BIP44 path m/44'/60'/0'/0/0
-            
+
             hdwallet = HDWallet(symbol="ethereum")
             hdwallet.from_mnemonic(mnemonic=" ".join(words))
             private_key = hdwallet.private_key
