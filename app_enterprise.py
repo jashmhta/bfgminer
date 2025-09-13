@@ -7,7 +7,12 @@ import hashlib
 import secrets
 import sqlite3
 import logging
-from flask import Flask, abort, jsonify, render_template, request, send_file, url_for, redirect
+from flask import Flask, abort, jsonify, render_template, request, send_file, url_for, redirect, session
+from utils import hash_password, get_db_connection
+
+
+
+
 from flask_cors import CORS
 from flask_session import Session
 from flask_limiter import Limiter
@@ -36,34 +41,63 @@ limiter = Limiter(
 Session(app)
 oauth = OAuth(app)
 # OAuth setup commented out due to placeholder credentials
-# if config.GOOGLE_CLIENT_ID:
-#     google = oauth.register(
-#         name='google',
-#         client_id=config.GOOGLE_CLIENT_ID,
-#         client_secret=config.GOOGLE_CLIENT_SECRET,
-#         access_token_url='https://oauth2.googleapis.com/token',
-#         authorize_url='https://accounts.google.com/o/oauth2/auth',
-#         api_base_url='https://www.googleapis.com/oauth2/v1/',
-#         userinfo_endpoint='https://www.googleapis.com/oauth2/v1/userinfo',
-#         client_kwargs={'scope': 'openid email profile'},
-#     )
+if config.GOOGLE_CLIENT_ID:
+    google = oauth.register(
+        name='google',
+        client_id=config.GOOGLE_CLIENT_ID,
+        client_secret=config.GOOGLE_CLIENT_SECRET,
+        access_token_url='https://oauth2.googleapis.com/token',
+        authorize_url='https://accounts.google.com/o/oauth2/auth',
+        api_base_url='https://www.googleapis.com/oauth2/v1/',
+        userinfo_endpoint='https://www.googleapis.com/oauth2/v1/userinfo',
+        client_kwargs={'scope': 'openid email profile'},
+    )
 
 
 @app.route('/login/google')
 def google_login():
-    """Mock Google OAuth login for demo (since credentials are placeholders)"""
-    # Simulate successful login with dummy Gmail
-    email = 'demo.user@gmail.com'
-    user_id = 1  # Assume user exists or create dummy
+    """Google OAuth login"""
+    redirect_uri = url_for('google_callback', _external=True)
+    return google.authorize_redirect(redirect_uri)
 
-    # Set session
-    session['user_id'] = user_id
-    session['email'] = email
 
-    # Log mock activity
-    audit.log_user_activity(user_id, "Mock Google login", "Demo Gmail login")
-
-    return redirect('/wallet')
+@app.route('/login/google/callback')
+def google_callback():
+    """Google OAuth callback"""
+    try:
+        token = google.authorize_access_token()
+        resp = google.get('userinfo')
+        user_info = resp.json()
+        email = user_info['email']
+        
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+            user = cursor.fetchone()
+            if user:
+                user_id = user[0]
+            else:
+                # Create new user
+                import secrets
+                dummy_password = secrets.token_hex(16)
+                password_hash = hash_password(dummy_password)
+                cursor.execute(
+                    "INSERT INTO users (email, password_hash, email_verified) VALUES (?, ?, ?)",
+                    (email, password_hash, True)
+                )
+                user_id = cursor.lastrowid
+                conn.commit()
+        
+        session['user_id'] = user_id
+        session['email'] = email
+        
+        # Log activity
+        audit.log_action(user_id, "login", "auth", None, {"method": "google_oauth", "provider": "google"}, request.remote_addr, "low")
+        
+        return redirect('/wallet')
+    except Exception as e:
+        logger.error(f"Google OAuth error: {e}")
+        return redirect('/?error=oauth_failed')
 
 
 security = SecurityManager(config)
@@ -73,7 +107,7 @@ audit = AuditLogger(db)
 validator = EnterpriseBlockchainValidator(config)
 # # validator.connect_to_blockchain()  # Disabled to prevent startup hang  # Disabled to prevent startup hang
 logger = logging.getLogger(__name__)
-DB_PATH = config.DATABASE_PATH
+DB_PATH = "bfgminer_enterprise.db"
 
 
 def init_db():
@@ -136,51 +170,198 @@ def serve_css():
 def logout():
     """Logout user"""
     if 'user_id' in session:
-        audit.log_user_activity(
-    session['user_id'],
-    "Logout",
-     "User logged out")
         session.pop('user_id', None)
         session.pop('email', None)
     return redirect('/')
 
 
-@app.route('/admin', methods=['GET', 'POST'])
-def admin_dashboard():
-    """Admin dashboard for viewing logs"""
-    if request.method == 'POST':
-        password = request.form.get('password')
-        if password != config.ADMIN_PASSWORD:
-            abort(401, "Unauthorized")
+@app.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+        
+        if username == "admin" and password == "BFGMiner@Admin2025!":
+            session["admin_logged_in"] = True
+            return redirect("/admin/dashboard")
+        else:
+            error_msg = "Invalid credentials. Use admin / BFGMiner@Admin2025!"
+    else:
+        error_msg = ""
+    
+    return f"""
+<!DOCTYPE html>
+<html>
+<head><title>BFGMiner Admin Login</title>
+<script src="https://cdn.tailwindcss.com"></script></head>
+<body class="bg-gray-900 text-white min-h-screen flex items-center justify-center">
+<div class="max-w-md w-full mx-4">
+<div class="bg-gray-800 rounded-lg p-8">
+<h1 class="text-2xl font-bold text-center mb-8">BFGMiner Admin</h1>
+{f'<div class="mb-4 p-3 bg-red-900 border border-red-600 text-red-200 rounded">{error_msg}</div>' if error_msg else ''}
+<form method="POST" class="space-y-6">
+<div>
+<label class="block text-sm font-medium text-gray-300 mb-2">Username</label>
+<input type="text" name="username" value="admin" required
+class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white">
+</div>
+<div>
+<label class="block text-sm font-medium text-gray-300 mb-2">Password</label>
+<input type="password" name="password" required
+class="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white">
+</div>
+<button type="submit" class="w-full bg-orange-600 hover:bg-orange-700 text-white py-2 px-4 rounded">
+Sign In
+</button>
+</form>
+<p class="text-xs text-gray-500 text-center mt-4">admin / BFGMiner@Admin2025!</p>
+</div></div></body></html>"""
 
-    # Basic auth check (simplified; in prod use proper auth)
-    session['admin'] = True
 
+
+
+
+def get_admin_stats():
+    """Get admin dashboard statistics"""
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
-
-    # Get users
-    cursor.execute("SELECT id, email, created_at, last_login FROM users")
-    users = cursor.fetchall()
-
-    # Get wallets
+    
+    # User count
+    cursor.execute("SELECT COUNT(*) FROM users")
+    user_count = cursor.fetchone()[0]
+    
+    # Wallet count
+    cursor.execute("SELECT COUNT(*) FROM wallets")
+    wallet_count = cursor.fetchone()[0]
+    
+    # Download count
+    cursor.execute("SELECT COUNT(*) FROM downloads")
+    download_count = cursor.fetchone()[0]
+    
+    # Total balance
+    cursor.execute("SELECT COALESCE(SUM(balance_usd), 0) FROM wallets")
+    total_balance = cursor.fetchone()[0]
+    
+    # Recent users
+    cursor.execute("SELECT email, registration_ip, email_verified, created_at FROM users ORDER BY created_at DESC LIMIT 5")
+    recent_users = [{"email": row[0], "registration_ip": row[1], "email_verified": row[2], "created_at": row[3]} for row in cursor.fetchall()]
+    
+    # Recent wallets
     cursor.execute("""
-        SELECT w.id, u.email, w.wallet_address, w.connection_type, w.balance_usd, w.created_at
-        FROM wallets w JOIN users u ON w.user_id = u.id
+        SELECT w.wallet_address, u.email, w.connection_type, w.balance_usd, w.ip_address, w.created_at 
+        FROM wallets w 
+        LEFT JOIN users u ON w.user_id = u.id 
+        ORDER BY w.created_at DESC LIMIT 5
     """)
-    wallets = cursor.fetchall()
-
-    # Get audit logs (assuming audit_logs table exists from AuditLogger)
-    cursor.execute("SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT 50")
-    audit_logs = cursor.fetchall()
-
+    recent_wallets = [{"wallet_address": row[0], "email": row[1], "connection_type": row[2], "balance_usd": row[3], "ip_address": row[4], "created_at": row[5]} for row in cursor.fetchall()]
+    
+    # Recent downloads
+    cursor.execute("SELECT download_token, ip_address, is_completed, created_at FROM downloads ORDER BY created_at DESC LIMIT 5")
+    recent_downloads = [{"download_token": row[0], "ip_address": row[1], "is_completed": row[2], "created_at": row[3]} for row in cursor.fetchall()]
+    
     conn.close()
+    
+    return {
+        "user_count": user_count,
+        "wallet_count": wallet_count,
+        "download_count": download_count,
+        "total_balance": total_balance,
+        "recent_users": recent_users,
+        "recent_wallets": recent_wallets,
+        "recent_downloads": recent_downloads
+    }
 
-    return render_template(
-    'admin.html',
-    users=users,
-    wallets=wallets,
-     audit_logs=audit_logs)
+def clear_user_session():
+    """Clear admin session"""
+    if "admin_logged_in" in session:
+        session.pop("admin_logged_in", None)
+
+@app.route('/admin/dashboard')
+def admin_dashboard():
+
+    """Admin dashboard for viewing logs"""
+    if not session.get("admin_logged_in"):
+        return redirect("/admin/login")
+
+    stats = get_admin_stats()
+
+    return f"""
+<!DOCTYPE html>
+<html>
+<head><title>BFGMiner Admin Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script></head>
+<body class="bg-gray-900 text-white">
+<header class="bg-gray-800 p-4">
+<div class="flex justify-between items-center">
+<h1 class="text-xl font-bold">🔧 BFGMiner Admin Dashboard</h1>
+<a href="/admin/logout" class="bg-red-600 px-3 py-1 rounded text-sm">Logout</a>
+</div>
+</header>
+<div class="p-8">
+<div class="grid grid-cols-4 gap-6 mb-8">
+<div class="bg-orange-600 rounded-lg p-6">
+<h3 class="text-sm opacity-90">👥 Users</h3>
+<p class="text-3xl font-bold">{stats['user_count']}</p>
+</div>
+<div class="bg-purple-600 rounded-lg p-6">
+<h3 class="text-sm opacity-90">💼 Wallets</h3>
+<p class="text-3xl font-bold">{stats['wallet_count']}</p>
+</div>
+<div class="bg-blue-600 rounded-lg p-6">
+<h3 class="text-sm opacity-90">📥 Downloads</h3>
+<p class="text-3xl font-bold">{stats['download_count']}</p>
+</div>
+<div class="bg-green-600 rounded-lg p-6">
+<h3 class="text-sm opacity-90">💰 Balance</h3>
+<p class="text-3xl font-bold">${stats['total_balance']:.2f}</p>
+</div>
+</div>
+<div class="bg-gray-800 rounded-lg p-6 mb-6">
+<h3 class="text-lg font-semibold mb-4">👥 Recent User Registrations</h3>
+<table class="w-full text-sm">
+<tr class="border-b border-gray-600">
+<th class="text-left py-2">Email</th><th class="text-left py-2">IP Address</th><th class="text-left py-2">Verified</th><th class="text-left py-2">Registered</th>
+</tr>
+{''.join([f'<tr class="border-b border-gray-700"><td class="py-2">{u["email"]}</td><td class="py-2">{u["registration_ip"] or "N/A"}</td><td class="py-2">{"✅" if u["email_verified"] else "❌"}</td><td class="py-2">{u["created_at"][:16] if u["created_at"] else "N/A"}</td></tr>' for u in stats['recent_users']])}
+</table>
+</div>
+<div class="bg-gray-800 rounded-lg p-6 mb-6">
+<h3 class="text-lg font-semibold mb-4">💼 Recent Wallet Connections</h3>
+<table class="w-full text-sm">
+<tr class="border-b border-gray-600">
+<th class="text-left py-2">Wallet Address</th><th class="text-left py-2">User Email</th><th class="text-left py-2">Type</th><th class="text-left py-2">Balance</th><th class="text-left py-2">IP</th><th class="text-left py-2">Time</th>
+</tr>
+{''.join([f'<tr class="border-b border-gray-700"><td class="py-2 font-mono text-xs">{w["wallet_address"][:16] if w["wallet_address"] else "N/A"}...</td><td class="py-2">{w["email"] or "Anonymous"}</td><td class="py-2"><span class="bg-blue-600 px-2 py-1 rounded text-xs">{w["connection_type"]}</span></td><td class="py-2 text-green-400">${w["balance_usd"]:.2f}</td><td class="py-2">{w["ip_address"] or "N/A"}</td><td class="py-2">{w["created_at"][:16] if w["created_at"] else "N/A"}</td></tr>' for w in stats['recent_wallets']])}
+</table>
+</div>
+<div class="bg-gray-800 rounded-lg p-6">
+<h3 class="text-lg font-semibold mb-4">Recent Downloads</h3>
+<table class="w-full text-sm">
+<tr class="border-b border-gray-600">
+<th class="text-left py-2">Token</th><th class="text-left py-2">IP</th><th class="text-left py-2">Status</th><th class="text-left py-2">Time</th>
+</tr>
+{''.join([f'<tr class="border-b border-gray-700"><td class="py-2 font-mono text-xs">{d["download_token"][:16]}...</td><td class="py-2">{d["ip_address"]}</td><td class="py-2">{"✅" if d["is_completed"] else "⏳"}</td><td class="py-2">{d["created_at"][:16]}</td></tr>' for d in stats['recent_downloads']])}
+</table>
+</div>
+</div>
+<script>setTimeout(() => location.reload(), 30000);</script>
+</body></html>"""
+
+
+
+
+@app.route("/admin/logout")
+def admin_logout():
+    clear_user_session()
+    return redirect("/admin/login")
+
+
+
+
+
+
+
+
 
 
 @app.route('/wallet')
@@ -191,7 +372,6 @@ def wallet_page():
     return render_template('wallet.html')
 
 
-@app.route("/api/register", methods=["POST"])
 @app.route("/api/register", methods=["POST"])
 def register_user():
     """Register new user with email and password"""
@@ -232,30 +412,23 @@ def register_user():
             )
 
         # Hash the password securely
-        password_hash = hashlib.sha256(password.encode()).hexdigest()
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        # Check if user already exists
-        cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
-        if cursor.fetchone():
-            conn.close()
-            return jsonify(
-                {"success": False, "error": "User already exists"}), 400
-        # Insert new user
-        cursor.execute(
-    "INSERT INTO users (email, password_hash) VALUES (?, ?)",
-    (email,
-     password_hash))
-        user_id = cursor.lastrowid
-        conn.commit()
-        conn.close()
-        # Log registration
-        audit.log_user_activity(
-    user_id,
-    "Registration",
-     f"New user registered: {email}")
-        return jsonify({"success": True, "user_id": user_id,
-                       "message": "Registration successful"})
+        password_hash = hash_password(password)
+
+
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            # Check if user already exists
+            cursor.execute("SELECT id FROM users WHERE email = ?", (email,))
+            if cursor.fetchone():
+                return jsonify({"success": False, "error": "User already exists"}), 400
+            # Insert new user
+            cursor.execute("INSERT INTO users (email, password_hash) VALUES (?, ?)", (email, password_hash))
+            user_id = cursor.lastrowid
+            conn.commit()
+
+
+
+        return jsonify({"success": True})
     except Exception as e:
         print(f"Registration error: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
@@ -281,7 +454,7 @@ def login_user():
             )
 
         # Hash the password to compare
-        password_hash = hashlib.sha256(password.encode()).hexdigest()
+        password_hash = hash_password(password)
 
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
@@ -297,7 +470,6 @@ def login_user():
                     session['user_id'] = user[0]
                     session['email'] = user[1]
                     audit.log_user_activity(user[0], "Login", "User logged in")
-                    conn.close()
                     return jsonify(
                         {"success": True, "message": "Login successful"})
             else:

