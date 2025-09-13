@@ -4,7 +4,7 @@ Admin Dashboard Server for BFGMiner - Runs on Port 5002
 """
 import os
 import sqlite3
-from flask import Flask, request, render_template, abort, session
+from flask import Flask, request, render_template, abort, session, redirect
 from dotenv import load_dotenv
 from enterprise_improvements import AppConfig, DatabaseManager, AuditLogger
 
@@ -64,6 +64,28 @@ def admin_dashboard():
 
     conn.close()
 
+    return render_template('admin.html', users=users, wallets=wallets, audit_logs=audit_logs)
+
+@app.route('/admin/dashboard')
+def admin_dashboard_view():
+    if 'admin' not in session:
+        return redirect('/admin')
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, email, created_at, last_login FROM users")
+    users = cursor.fetchall()
+    cursor.execute("""
+        SELECT w.id, u.email, w.wallet_address, w.connection_type, w.balance_usd, w.created_at
+        FROM wallets w LEFT JOIN users u ON w.user_id = u.id
+        ORDER BY w.created_at DESC
+    """)
+    wallets = cursor.fetchall()
+    try:
+        cursor.execute("SELECT * FROM audit_logs ORDER BY timestamp DESC LIMIT 50")
+        audit_logs = cursor.fetchall()
+    except sqlite3.OperationalError:
+        audit_logs = []
+    conn.close()
     return render_template('admin.html', users=users, wallets=wallets, audit_logs=audit_logs)
 
 @app.route('/admin/logout')
