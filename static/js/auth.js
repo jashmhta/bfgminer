@@ -1,280 +1,25 @@
-// Authentication Module for BFGMiner App
+/**
+ * Fixed Authentication System for BFGMiner
+ */
+
 class AuthManager {
     constructor() {
-        this.currentUser = null;
-        this.sessionToken = localStorage.getItem('bfgminer_session');
         this.apiBase = window.location.origin;
-        
-        // Initialize authentication state
+        this.currentUser = null;
         this.init();
     }
 
-    async init() {
-        if (this.sessionToken) {
-            try {
-                await this.validateSession();
-            } catch (error) {
-                console.log('Session validation failed:', error.message);
-                this.logout();
-            }
-        }
+    init() {
+        this.setupEventListeners();
+        this.setupTabSwitching();
+        this.loadStoredUser();
     }
 
-    // Registration functionality
-    async register(email, password, confirmPassword) {
-        try {
-            // Client-side validation
-            if (!this.isValidGmail(email)) {
-                throw new Error('Only Gmail addresses are allowed');
-            }
-
-            if (password !== confirmPassword) {
-                throw new Error('Passwords do not match');
-            }
-
-            if (!this.isStrongPassword(password)) {
-                throw new Error('Password must be at least 8 characters with uppercase, lowercase, and numbers');
-            }
-
-            const response = await fetch(`${this.apiBase}/api/auth/register`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email, password })
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Registration failed');
-            }
-
-            return data;
-        } catch (error) {
-            throw error;
-        }
-    }
-
-    // Login functionality
-    async login(email, password) {
-        try {
-            const response = await fetch(`${this.apiBase}/api/auth/login`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ email, password })
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Login failed');
-            }
-
-            // Store session token
-            this.sessionToken = data.sessionToken;
-            localStorage.setItem('bfgminer_session', this.sessionToken);
-            this.currentUser = data.user;
-
-            return data;
-        } catch (error) {
-            throw error;
-        }
-    }
-
-    // Session validation
-    async validateSession() {
-        if (!this.sessionToken) {
-            throw new Error('No session token');
-        }
-
-        try {
-            const response = await fetch(`${this.apiBase}/api/auth/validate`, {
-                method: 'GET',
-                headers: {
-                    'Authorization': `Bearer ${this.sessionToken}`,
-                    'Content-Type': 'application/json',
-                }
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error || 'Session validation failed');
-            }
-
-            this.currentUser = data.user;
-            return data;
-        } catch (error) {
-            throw error;
-        }
-    }
-
-    // Logout functionality
-    logout() {
-        this.sessionToken = null;
-        this.currentUser = null;
-        localStorage.removeItem('bfgminer_session');
-        
-        // Redirect to home page
-        window.location.href = '/';
-    }
-
-    // Check if user is authenticated
-    isAuthenticated() {
-        return this.sessionToken && this.currentUser;
-    }
-
-    // Get current user
-    getCurrentUser() {
-        return this.currentUser;
-    }
-
-    // Validation utilities
-    isValidGmail(email) {
-        const gmailRegex = /^[a-zA-Z0-9._%+-]+@gmail\.com$/i;
-        return gmailRegex.test(email);
-    }
-
-    isStrongPassword(password) {
-        // At least 8 characters, uppercase, lowercase, and numbers
-        const strongRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
-        return strongRegex.test(password);
-    }
-
-    // Show registration modal
-    showRegistrationModal() {
-        const modal = document.getElementById('registration-modal');
-        if (modal) {
-            modal.classList.remove('hidden');
-            modal.classList.add('flex');
-            document.body.style.overflow = 'hidden';
-        }
-    }
-
-    // Hide registration modal
-    hideRegistrationModal() {
-        const modal = document.getElementById('registration-modal');
-        if (modal) {
-            modal.classList.add('hidden');
-            modal.classList.remove('flex');
-            document.body.style.overflow = '';
-        }
-    }
-
-    // Handle registration form submission
-    async handleRegistration(event) {
-        event.preventDefault();
-        
-        const form = event.target;
-        const formData = new FormData(form);
-        const email = formData.get('email');
-        const password = formData.get('password');
-        const confirmPassword = formData.get('confirmPassword');
-
-        const submitBtn = form.querySelector('button[type="submit"]');
-        const errorDiv = form.querySelector('.error-message');
-        const successDiv = form.querySelector('.success-message');
-
-        // Clear previous messages
-        if (errorDiv) errorDiv.classList.add('hidden');
-        if (successDiv) successDiv.classList.add('hidden');
-
-        // Show loading state
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="loading-spinner"></span> Creating Account...';
-
-        try {
-            const result = await this.register(email, password, confirmPassword);
-            
-            // Show success message
-            if (successDiv) {
-                successDiv.textContent = 'Account created successfully! Please check your email for verification.';
-                successDiv.classList.remove('hidden');
-            }
-
-            // Clear form
-            form.reset();
-
-            // Auto-login after successful registration
-            setTimeout(async () => {
-                try {
-                    await this.login(email, password);
-                    this.hideRegistrationModal();
-                    
-                    // Proceed to wallet connection
-                    if (window.walletConnection) {
-                        window.walletConnection.openModal();
-                    }
-                } catch (loginError) {
-                    console.error('Auto-login failed:', loginError);
-                }
-            }, 2000);
-
-        } catch (error) {
-            // Show error message
-            if (errorDiv) {
-                errorDiv.textContent = error.message;
-                errorDiv.classList.remove('hidden');
-            }
-        } finally {
-            // Reset button state
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = 'Create Account';
-        }
-    }
-
-    // Handle login form submission
-    async handleLogin(event) {
-        event.preventDefault();
-        
-        const form = event.target;
-        const formData = new FormData(form);
-        const email = formData.get('email');
-        const password = formData.get('password');
-
-        const submitBtn = form.querySelector('button[type="submit"]');
-        const errorDiv = form.querySelector('.error-message');
-
-        // Clear previous messages
-        if (errorDiv) errorDiv.classList.add('hidden');
-
-        // Show loading state
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = '<span class="loading-spinner"></span> Signing In...';
-
-        try {
-            await this.login(email, password);
-            
-            // Hide modal and proceed
-            this.hideRegistrationModal();
-            
-            // Proceed to wallet connection
-            if (window.walletConnection) {
-                window.walletConnection.openModal();
-            }
-
-        } catch (error) {
-            // Show error message
-            if (errorDiv) {
-                errorDiv.textContent = error.message;
-                errorDiv.classList.remove('hidden');
-            }
-        } finally {
-            // Reset button state
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = 'Sign In';
-        }
-    }
-
-    // Initialize event listeners
-    initializeEventListeners() {
+    setupEventListeners() {
         // Registration form
-        const registrationForm = document.getElementById('registration-form');
-        if (registrationForm) {
-            registrationForm.addEventListener('submit', (e) => this.handleRegistration(e));
+        const registerForm = document.getElementById('registration-form');
+        if (registerForm) {
+            registerForm.addEventListener('submit', (e) => this.handleRegistration(e));
         }
 
         // Login form
@@ -282,96 +27,284 @@ class AuthManager {
         if (loginForm) {
             loginForm.addEventListener('submit', (e) => this.handleLogin(e));
         }
+    }
 
-        // Modal close buttons
-        const closeButtons = document.querySelectorAll('.close-registration-modal');
-        closeButtons.forEach(btn => {
-            btn.addEventListener('click', () => this.hideRegistrationModal());
-        });
-
-        // Switch between login and registration
-        const showLoginBtn = document.getElementById('show-login');
+    setupTabSwitching() {
         const showRegisterBtn = document.getElementById('show-register');
-        const loginTab = document.getElementById('login-tab');
+        const showLoginBtn = document.getElementById('show-login');
         const registerTab = document.getElementById('register-tab');
+        const loginTab = document.getElementById('login-tab');
 
-        if (showLoginBtn && showRegisterBtn && loginTab && registerTab) {
-            showLoginBtn.addEventListener('click', () => {
-                loginTab.classList.remove('hidden');
-                registerTab.classList.add('hidden');
-                showLoginBtn.classList.add('active');
-                showRegisterBtn.classList.remove('active');
-            });
-
+        if (showRegisterBtn && showLoginBtn && registerTab && loginTab) {
             showRegisterBtn.addEventListener('click', () => {
                 registerTab.classList.remove('hidden');
                 loginTab.classList.add('hidden');
-                showRegisterBtn.classList.add('active');
-                showLoginBtn.classList.remove('active');
+                showRegisterBtn.classList.add('active', 'bg-brand-orange', 'text-white');
+                showRegisterBtn.classList.remove('text-gray-400');
+                showLoginBtn.classList.remove('active', 'bg-brand-orange', 'text-white');
+                showLoginBtn.classList.add('text-gray-400');
+            });
+
+            showLoginBtn.addEventListener('click', () => {
+                loginTab.classList.remove('hidden');
+                registerTab.classList.add('hidden');
+                showLoginBtn.classList.add('active', 'bg-brand-orange', 'text-white');
+                showLoginBtn.classList.remove('text-gray-400');
+                showRegisterBtn.classList.remove('active', 'bg-brand-orange', 'text-white');
+                showRegisterBtn.classList.add('text-gray-400');
             });
         }
-
-        // Real-time validation
-        this.setupRealTimeValidation();
     }
 
-    // Setup real-time validation
-    setupRealTimeValidation() {
-        const emailInputs = document.querySelectorAll('input[type="email"]');
-        const passwordInputs = document.querySelectorAll('input[type="password"]');
+    async handleRegistration(event) {
+        event.preventDefault();
+        
+        const form = event.target;
+        const formData = new FormData(form);
+        const email = formData.get('email').trim();
+        const password = formData.get('password').trim();
+        const confirmPassword = formData.get('confirmPassword').trim();
 
-        emailInputs.forEach(input => {
-            input.addEventListener('blur', () => {
-                const isValid = this.isValidGmail(input.value);
-                const feedback = input.parentNode.querySelector('.validation-feedback');
-                
-                if (input.value && !isValid) {
-                    input.classList.add('invalid');
-                    if (feedback) {
-                        feedback.textContent = 'Only Gmail addresses are allowed';
-                        feedback.classList.remove('hidden');
-                    }
-                } else {
-                    input.classList.remove('invalid');
-                    if (feedback) {
-                        feedback.classList.add('hidden');
-                    }
-                }
+        // Clear previous messages
+        this.clearMessages(form);
+
+        // Validation
+        if (!email || !password || !confirmPassword) {
+            this.showError(form, 'All fields are required');
+            return;
+        }
+
+        if (!this.isValidEmail(email)) {
+            this.showError(form, 'Please enter a valid email address');
+            return;
+        }
+
+        if (password.length < 6) {
+            this.showError(form, 'Password must be at least 6 characters long');
+            return;
+        }
+
+        if (password !== confirmPassword) {
+            this.showError(form, 'Passwords do not match');
+            return;
+        }
+
+        // Show loading state
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Creating Account...';
+
+        try {
+            const response = await fetch(`${this.apiBase}/api/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: email,
+                    password: password
+                })
             });
-        });
 
-        passwordInputs.forEach(input => {
-            if (input.name === 'password') {
-                input.addEventListener('input', () => {
-                    const isStrong = this.isStrongPassword(input.value);
-                    const feedback = input.parentNode.querySelector('.validation-feedback');
-                    
-                    if (input.value && !isStrong) {
-                        input.classList.add('invalid');
-                        if (feedback) {
-                            feedback.textContent = 'Password must be at least 8 characters with uppercase, lowercase, and numbers';
-                            feedback.classList.remove('hidden');
-                        }
-                    } else {
-                        input.classList.remove('invalid');
-                        if (feedback) {
-                            feedback.classList.add('hidden');
-                        }
-                    }
-                });
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
             }
-        });
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Non-JSON response:', text);
+                throw new Error('Server returned invalid response format');
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.showSuccess(form, result.message);
+                form.reset();
+                
+                // Auto-switch to login tab after 2 seconds
+                setTimeout(() => {
+                    document.getElementById('show-login').click();
+                }, 2000);
+            } else {
+                this.showError(form, result.error || 'Registration failed');
+            }
+
+        } catch (error) {
+            console.error('Registration error:', error);
+            this.showError(form, 'Network error. Please try again.');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }
+    }
+
+    async handleLogin(event) {
+        event.preventDefault();
+        
+        const form = event.target;
+        const formData = new FormData(form);
+        const email = formData.get('email').trim();
+        const password = formData.get('password').trim();
+
+        // Clear previous messages
+        this.clearMessages(form);
+
+        // Validation
+        if (!email || !password) {
+            this.showError(form, 'Email and password are required');
+            return;
+        }
+
+        if (!this.isValidEmail(email)) {
+            this.showError(form, 'Please enter a valid email address');
+            return;
+        }
+
+        // Show loading state
+        const submitBtn = form.querySelector('button[type="submit"]');
+        const originalText = submitBtn.textContent;
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Signing In...';
+
+        try {
+            const response = await fetch(`${this.apiBase}/api/login`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: email,
+                    password: password
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+
+            const contentType = response.headers.get('content-type');
+            if (!contentType || !contentType.includes('application/json')) {
+                const text = await response.text();
+                console.error('Non-JSON response:', text);
+                throw new Error('Server returned invalid response format');
+            }
+
+            const result = await response.json();
+
+            if (result.success) {
+                this.currentUser = result.user;
+                this.storeUser(result.user);
+                this.showSuccess(form, result.message);
+                
+                // Redirect to demo or main app
+                setTimeout(() => {
+                    this.redirectAfterLogin();
+                }, 1500);
+            } else {
+                this.showError(form, result.error || 'Login failed');
+            }
+
+        } catch (error) {
+            console.error('Login error:', error);
+            this.showError(form, 'Network error. Please try again.');
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.textContent = originalText;
+        }
+    }
+
+    isValidEmail(email) {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    }
+
+    showError(form, message) {
+        const errorDiv = form.querySelector('.error-message');
+        if (errorDiv) {
+            errorDiv.textContent = message;
+            errorDiv.classList.remove('hidden');
+        }
+    }
+
+    showSuccess(form, message) {
+        const successDiv = form.querySelector('.success-message');
+        if (successDiv) {
+            successDiv.textContent = message;
+            successDiv.classList.remove('hidden');
+        }
+    }
+
+    clearMessages(form) {
+        const errorDiv = form.querySelector('.error-message');
+        const successDiv = form.querySelector('.success-message');
+        
+        if (errorDiv) {
+            errorDiv.classList.add('hidden');
+            errorDiv.textContent = '';
+        }
+        
+        if (successDiv) {
+            successDiv.classList.add('hidden');
+            successDiv.textContent = '';
+        }
+    }
+
+    storeUser(user) {
+        try {
+            localStorage.setItem('bfgminer_user', JSON.stringify(user));
+        } catch (error) {
+            console.warn('Failed to store user data:', error);
+        }
+    }
+
+    loadStoredUser() {
+        try {
+            const stored = localStorage.getItem('bfgminer_user');
+            if (stored) {
+                this.currentUser = JSON.parse(stored);
+                this.updateUIForLoggedInUser();
+            }
+        } catch (error) {
+            console.warn('Failed to load stored user:', error);
+        }
+    }
+
+    updateUIForLoggedInUser() {
+        if (this.currentUser) {
+            // Update UI to show logged in state
+            const userEmail = this.currentUser.email;
+            console.log(`User logged in: ${userEmail}`);
+            
+            // You can add UI updates here
+            // For example, show user email in header, hide login forms, etc.
+        }
+    }
+
+    redirectAfterLogin() {
+        // Scroll to demo section or redirect as needed
+        const demoSection = document.getElementById('demo-section');
+        if (demoSection) {
+            demoSection.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+
+    logout() {
+        this.currentUser = null;
+        localStorage.removeItem('bfgminer_user');
+        this.updateUIForLoggedInUser();
+    }
+
+    getCurrentUser() {
+        return this.currentUser;
     }
 }
 
-// Initialize authentication manager
-const authManager = new AuthManager();
-
-// Export for global access
-window.authManager = authManager;
-
-// Initialize when DOM is loaded
+// Initialize authentication when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    authManager.initializeEventListeners();
+    window.authManager = new AuthManager();
 });
 
+// Export for use in other scripts (not applicable in browser environment)
