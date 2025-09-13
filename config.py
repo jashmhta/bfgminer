@@ -28,6 +28,8 @@ class SecurityConfig:
     SESSION_TIMEOUT: int = int(os.getenv("SESSION_TIMEOUT", "3600"))  # 1 hour
     RATE_LIMIT: str = os.getenv("RATE_LIMIT", "100 per hour")
     ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "BFGMiner@Admin2025!")
+    GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID", "")
+    GOOGLE_CLIENT_SECRET: str = os.getenv("GOOGLE_CLIENT_SECRET", "")
 
 
 @dataclass

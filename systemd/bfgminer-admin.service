@@ -1,0 +1,13 @@
+[Unit]
+Description=BFGMiner Admin (Gunicorn)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=%h/bfgminer
+Environment="PATH=%h/bfgminer/venv/bin"
+ExecStart=%h/bfgminer/venv/bin/gunicorn -b 0.0.0.0:5002 admin_server:app
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

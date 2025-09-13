@@ -4,8 +4,7 @@ Enterprise Error Handling and Monitoring
 
 import logging
 import traceback
-from datetime import datetime
-from datetime import UTC
+from datetime import UTC, datetime
 from functools import wraps
 from typing import Any, Dict
 

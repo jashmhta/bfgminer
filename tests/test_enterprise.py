@@ -11,24 +11,15 @@ import pytest
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from enterprise_improvements import (
-    AppConfig,
-    AuditLogger,
-    DatabaseManager,  # noqa: E402
-    EnterpriseBlockchainValidator,
-    SecurityManager,
-)  # noqa: E402
-from error_handler import (
-    AuthenticationError,
-    BFGMinerException,  # noqa: E402
-    BlockchainError,
-    ErrorCode,
-    ValidationError,
-)  # noqa: E402
-from monitoring import (
-    DatabaseMonitor,
-    SystemMonitor,
-)  # noqa: E402 # noqa: E402
+from enterprise_improvements import DatabaseManager  # noqa: E402
+from enterprise_improvements import (AppConfig, AuditLogger,  # noqa: E402
+                                     EnterpriseBlockchainValidator,
+                                     SecurityManager)
+from error_handler import BFGMinerException  # noqa: E402
+from error_handler import (AuthenticationError, BlockchainError,  # noqa: E402
+                           ErrorCode, ValidationError)
+from monitoring import (DatabaseMonitor,  # noqa: E402 # noqa: E402
+                        SystemMonitor)
 
 
 class TestSecurityManager:
@@ -46,9 +37,7 @@ class TestSecurityManager:
 
         assert hashed != password
         assert self.security_manager.verify_password(password, hashed)
-        assert not self.security_manager.verify_password(
-            "WrongPassword", hashed
-        )
+        assert not self.security_manager.verify_password("WrongPassword", hashed)
 
     def test_lockout_mechanism(self):
         """Test account lockout after failed attempts"""
@@ -80,26 +69,16 @@ class TestSecurityManager:
     def test_input_validation(self):
         """Test input validation"""
         # Email validation
-        assert self.security_manager.validate_input(
-            "test@example.com", "email"
-        )
-        assert not self.security_manager.validate_input(
-            "invalid-email", "email"
-        )
+        assert self.security_manager.validate_input("test@example.com", "email")
+        assert not self.security_manager.validate_input("invalid-email", "email")
 
         # Private key validation
-        assert self.security_manager.validate_input(
-            "0x" + "a" * 64, "private_key"
-        )
+        assert self.security_manager.validate_input("0x" + "a" * 64, "private_key")
         assert self.security_manager.validate_input("a" * 64, "private_key")
-        assert not self.security_manager.validate_input(
-            "invalid", "private_key"
-        )
+        assert not self.security_manager.validate_input("invalid", "private_key")
 
         # Wallet address validation
-        assert self.security_manager.validate_input(
-            "0x" + "a" * 40, "wallet_address"
-        )
+        assert self.security_manager.validate_input("0x" + "a" * 40, "wallet_address")
         assert not self.security_manager.validate_input(
             "0x" + "a" * 39, "wallet_address"
         )
@@ -156,9 +135,7 @@ class TestDatabaseManager:
                     ("test@example.com", "hashed_password"),
                 )
                 # Force an error
-                cursor.execute(
-                    "INSERT INTO invalid_table (col) VALUES (?)", ("value",)
-                )
+                cursor.execute("INSERT INTO invalid_table (col) VALUES (?)", ("value",))
         except Exception:
             pass
 
@@ -306,9 +283,7 @@ class TestErrorHandling:
 
     def test_validation_error(self):
         """Test validation error"""
-        error = ValidationError(
-            "Invalid email format", field="email", value="invalid"
-        )
+        error = ValidationError("Invalid email format", field="email", value="invalid")
 
         assert error.error_code == ErrorCode.INVALID_INPUT
         assert error.http_status == 400
