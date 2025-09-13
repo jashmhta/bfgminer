@@ -1,237 +1,531 @@
-/* Clean BFGMiner Mnemonic Brute-Force Animation - From Scratch
- * Features: Terminal simulation, stats panel, speed controls, forced success after ~10 attempts
- * Redirects to /login/google with $250 balance message on success
- * Robust DOM handling, no dependencies beyond basic JS
- */
-
-const BIP39_WORDS = ['abandon', 'ability', 'able', 'about', 'above', 'absent', 'absorb', 'abstract', 'absurd', 'abuse', 'access', 'accident', 'account', 'accuse', 'achieve', 'acid', 'acoustic', 'acquire', 'across', 'act', 'action', 'actor', 'actress', 'actual', 'adapt', 'add', 'addict', 'address', 'adjust', 'admit', 'adult', 'advance', 'advice', 'aerobic', 'affair', 'afford', 'afraid', 'again', 'agent', 'agree', 'ahead', 'aim', 'air', 'airport', 'aisle', 'alarm', 'album', 'alcohol', 'alert', 'alien', 'all', 'alley', 'allow', 'almost', 'alone', 'alpha', 'already', 'also', 'alter', 'always', 'amateur', 'amazing', 'among', 'amount', 'amused', 'analyst', 'anchor', 'ancient', 'anger', 'angle', 'angry', 'animal', 'ankle', 'announce', 'annual', 'another', 'answer', 'antenna', 'antique', 'anxiety', 'any', 'apart', 'apology', 'appear', 'apple', 'approve', 'april', 'arch', 'arctic', 'area', 'arena', 'argue', 'arm', 'armed', 'armor', 'army', 'around', 'arrange', 'arrest', 'arrive'];
-
-const COMMANDS = [
-  'bfgminer --scan 1 --set-device BITMAIN:clock=800',
-  'cgminer --version',
-  'nvidia-smi --query-gpu=temperature.gpu,utilization.gpu --format=csv',
-  'ps aux | grep miner',
-  'df -h /dev/shm',
-  'echo "Starting brute-force sequence..."',
-  'watch -n 1 "date"',
-  'tail -f /var/log/miner.log'
-];
-
-const RESPONSES = {
-  'bfgminer': ['[BFGMiner] 6.2.2 | Started: 2024-01-01 12:00:00', '[Pool 1] Stratum connection established', '[Device 0] 1.5 GH/s | Temp: 65C | Accepted: 1234', '[Summary] Total hashrate: 3.2 GH/s'],
-  'nvidia-smi': ['GPU 0, Temp: 68C, Util: 98%', 'GPU 1, Temp: 72C, Util: 100%', 'GPU 2, Temp: 70C, Util: 99%'],
-  'ps': ['root 12345  2.1  1.2  miner.py', 'user 67890  1.8  0.9  bfgminer'],
-  'default': ['Command completed.', 'Status: OK', 'Hashrate stable.']
-};
-
-class MnemonicSimulator {
-  constructor() {
-    this.running = false;
-    this.paused = false;
-    this.speed = 5;
-    this.attempts = 0;
-    this.startTime = 0;
-    this.intervalId = null;
-    this.statsId = null;
-    this.commandId = null;
-    this.elements = this.getElements();
-    this.initControls();
-  }
-
-  getElements() {
-    const els = {};
-    const ids = ['demo-modal', 'phrase-scroller', 'command-output', 'demo-status', 'attempts-per-sec', 'total-attempts', 'success-rate', 'elapsed-time', 'progress-bar', 'progress-text', 'hash-rate', 'pool-status', 'speed-slider', 'speed-display', 'play-pause-btn'];
-    ids.forEach(id => {
-      els[id] = document.getElementById(id);
-    });
-    return els;
-  }
-
-  initControls() {
-    if (!this.elements.speedSlider) return;
-    this.elements.speedSlider.addEventListener('input', (e) => {
-      this.speed = parseInt(e.target.value);
-      this.elements.speedDisplay.textContent = `${this.speed}x`;
-      this.updateSpeed();
-    });
-
-    if (this.elements['play-pause-btn']) {
-      this.elements['play-pause-btn'].addEventListener('click', () => this.togglePause());
+// Enhanced Demo Animation Module with Dynamic Mnemonic Discovery
+class DemoAnimation {
+    constructor() {
+        this.targetPhrase = 'frequent wine code army furnace donor olive uniform ball match left divorce';
+        this.targetWords = this.targetPhrase.split(' ');
+        this.animationInterval = null;
+        this.currentWordIndex = 0;
+        this.isAnimating = false;
+        
+        // BIP39 wordlist (truncated for performance)
+        this.wordlist = [
+            'abandon', 'ability', 'able', 'about', 'above', 'absent', 'absorb', 'abstract', 'absurd', 'abuse',
+            'access', 'accident', 'account', 'accuse', 'achieve', 'acid', 'acoustic', 'acquire', 'across', 'act',
+            'action', 'actor', 'actress', 'actual', 'adapt', 'add', 'addict', 'address', 'adjust', 'admit',
+            'adult', 'advance', 'advice', 'aerobic', 'affair', 'afford', 'afraid', 'again', 'age', 'agent',
+            'agree', 'ahead', 'aim', 'air', 'airport', 'aisle', 'alarm', 'album', 'alcohol', 'alert', 'alien',
+            'all', 'alley', 'allow', 'almost', 'alone', 'alpha', 'already', 'also', 'alter', 'always', 'amateur',
+            'amazing', 'among', 'amount', 'amused', 'analyst', 'anchor', 'ancient', 'anger', 'angle', 'angry',
+            'animal', 'ankle', 'announce', 'annual', 'another', 'answer', 'antenna', 'antique', 'anxiety', 'any',
+            'apart', 'apology', 'appear', 'apple', 'approve', 'april', 'arch', 'arctic', 'area', 'arena',
+            'argue', 'arm', 'armed', 'armor', 'army', 'around', 'arrange', 'arrest', 'arrive', 'arrow',
+            'art', 'artefact', 'artist', 'artwork', 'ask', 'aspect', 'assault', 'asset', 'assist', 'assume',
+            'asthma', 'athlete', 'atom', 'attack', 'attend', 'attitude', 'attract', 'auction', 'audit', 'august',
+            'aunt', 'author', 'auto', 'autumn', 'average', 'avocado', 'avoid', 'awake', 'aware', 'away',
+            'awesome', 'awful', 'awkward', 'axis', 'baby', 'bachelor', 'bacon', 'badge', 'bag', 'balance',
+            'balcony', 'ball', 'bamboo', 'banana', 'banner', 'bar', 'barely', 'bargain', 'barrel', 'base',
+            'basic', 'basket', 'battle', 'beach', 'bean', 'beauty', 'because', 'become', 'bed', 'beef',
+            'before', 'begin', 'behave', 'behind', 'believe', 'below', 'belt', 'bench', 'benefit', 'best',
+            'betray', 'better', 'between', 'beyond', 'bicycle', 'bid', 'bike', 'bind', 'biology', 'bird',
+            'birth', 'bitter', 'black', 'blade', 'blame', 'blanket', 'blast', 'bleak', 'bless', 'blind',
+            'block', 'blood', 'blossom', 'blouse', 'blue', 'blur', 'blush', 'board', 'boat', 'body',
+            'boil', 'bomb', 'bone', 'bonus', 'book', 'boost', 'border', 'borrow', 'boss', 'bottom',
+            'bounce', 'box', 'boy', 'bracket', 'brain', 'brand', 'brass', 'brave', 'bread', 'breeze',
+            'brick', 'bridge', 'brief', 'bright', 'bring', 'brisk', 'broccoli', 'broken', 'bronze', 'broom',
+            'brother', 'brown', 'brush', 'bubble', 'buddy', 'budget', 'buffalo', 'build', 'bulb', 'bulk',
+            'bullet', 'bundle', 'bunker', 'burden', 'burger', 'burst', 'bus', 'business', 'busy', 'butter',
+            'buyer', 'buzz', 'cabbage', 'cabin', 'cable', 'cactus', 'cage', 'cake', 'call', 'calm',
+            'camera', 'camp', 'can', 'canal', 'cancel', 'candy', 'cannon', 'canoe', 'canvas', 'canyon',
+            'capable', 'capital', 'captain', 'car', 'carbon', 'card', 'cargo', 'carpet', 'carry', 'cart',
+            'case', 'cash', 'casino', 'castle', 'casual', 'cat', 'catch', 'category', 'cattle', 'caught',
+            'cause', 'caution', 'cave', 'ceiling', 'celery', 'cement', 'center', 'century', 'ceramic', 'certain',
+            'chair', 'chalk', 'champion', 'change', 'chaos', 'chapter', 'charge', 'chase', 'chat', 'cheap',
+            'check', 'cheese', 'chef', 'cherry', 'chest', 'chicken', 'chief', 'child', 'chimney', 'choice',
+            'choose', 'chronic', 'chuckle', 'chunk', 'cigar', 'cinnamon', 'circle', 'citizen', 'city', 'civil',
+            'claim', 'clap', 'clarify', 'claw', 'clay', 'clean', 'clerk', 'clever', 'click', 'client',
+            'cliff', 'climb', 'clinic', 'clip', 'clock', 'clog', 'close', 'cloth', 'cloud', 'clown',
+            'club', 'clump', 'cluster', 'clutch', 'coach', 'coast', 'coconut', 'code', 'coffee', 'coil',
+            'coin', 'collect', 'color', 'column', 'combine', 'come', 'comfort', 'comic', 'comma', 'command',
+            'comment', 'common', 'company', 'concert', 'conduct', 'confirm', 'congress', 'connect', 'consider', 'control',
+            'convince', 'cook', 'cool', 'copper', 'copy', 'coral', 'core', 'corn', 'correct', 'cost',
+            'cotton', 'couch', 'country', 'couple', 'course', 'cousin', 'cover', 'coyote', 'crack', 'cradle',
+            'craft', 'cram', 'crane', 'crash', 'crater', 'crawl', 'crazy', 'cream', 'credit', 'creek',
+            'crew', 'cricket', 'crime', 'crisp', 'critic', 'crop', 'cross', 'crouch', 'crowd', 'crucial',
+            'cruel', 'cruise', 'crush', 'cry', 'crystal', 'cube', 'culture', 'cup', 'cupboard', 'curious',
+            'current', 'curtain', 'curve', 'cushion', 'custom', 'cute', 'cycle', 'dad', 'damage', 'damp',
+            'dance', 'danger', 'daring', 'dark', 'dash', 'date', 'daughter', 'dawn', 'day', 'deal',
+            'debate', 'debris', 'decade', 'december', 'decide', 'decline', 'decorate', 'decrease', 'deem', 'deep',
+            'deer', 'deny', 'depart', 'depend', 'deposit', 'depth', 'deputy', 'derive', 'describe', 'desert',
+            'design', 'desk', 'despair', 'destroy', 'detail', 'detect', 'develop', 'device', 'devote', 'diagram',
+            'dial', 'diamond', 'diary', 'dice', 'diesel', 'diet', 'differ', 'digital', 'dignity', 'dilemma',
+            'dinner', 'dinosaur', 'direct', 'dirt', 'disagree', 'discover', 'disease', 'dish', 'dismiss', 'disorder',
+            'display', 'distance', 'divert', 'divide', 'divorce', 'dizzy', 'doctor', 'document', 'dog', 'doll',
+            'dolphin', 'domain', 'donate', 'donkey', 'donor', 'door', 'dose', 'double', 'dove', 'draft',
+            'dragon', 'drama', 'drastic', 'draw', 'dream', 'dress', 'drift', 'drill', 'drink', 'drip',
+            'drive', 'drop', 'drum', 'dry', 'duck', 'dumb', 'dune', 'during', 'dust', 'dutch',
+            'duty', 'dwarf', 'dynamic', 'eager', 'eagle', 'early', 'earn', 'earth', 'easily', 'east',
+            'easy', 'echo', 'ecology', 'economy', 'edge', 'edit', 'educate', 'effort', 'egg', 'eight',
+            'either', 'elbow', 'elder', 'electric', 'elegant', 'element', 'elephant', 'elevator', 'elite', 'else',
+            'embark', 'embody', 'embrace', 'emerge', 'emotion', 'employ', 'empower', 'empty', 'enable', 'enact',
+            'end', 'endless', 'endorse', 'enemy', 'energy', 'enforce', 'engage', 'engine', 'enhance', 'enjoy',
+            'enlist', 'enough', 'enrich', 'enroll', 'ensure', 'enter', 'entire', 'entry', 'envelope', 'episode',
+            'equal', 'equip', 'era', 'erase', 'erode', 'error', 'erupt', 'escape', 'essay', 'essence',
+            'estate', 'eternal', 'ethics', 'evidence', 'evil', 'evoke', 'evolve', 'exact', 'example', 'exceed',
+            'exchange', 'excite', 'exclude', 'excuse', 'execute', 'exercise', 'exhaust', 'exhibit', 'exile', 'exist',
+            'exit', 'exotic', 'expand', 'expect', 'expire', 'explain', 'expose', 'express', 'extend', 'extra',
+            'eye', 'eyebrow', 'fabric', 'face', 'faculty', 'fade', 'faint', 'faith', 'fall', 'false',
+            'fame', 'family', 'famous', 'fan', 'fancy', 'fantasy', 'farm', 'fashion', 'fat', 'fatal',
+            'father', 'fatigue', 'fault', 'favorite', 'feature', 'february', 'federal', 'fee', 'feed', 'feel',
+            'female', 'fence', 'festival', 'fetch', 'fever', 'few', 'fiber', 'fiction', 'field', 'figure',
+            'file', 'film', 'filter', 'final', 'find', 'fine', 'finger', 'finish', 'fire', 'firm',
+            'first', 'fiscal', 'fish', 'fit', 'fitness', 'fix', 'flag', 'flame', 'flash', 'flat',
+            'flavor', 'flee', 'flight', 'flip', 'float', 'flock', 'floor', 'flower', 'fluid', 'flush',
+            'fly', 'foam', 'focus', 'fog', 'foil', 'fold', 'follow', 'food', 'foot', 'force',
+            'foreign', 'forest', 'forget', 'fork', 'form', 'formal', 'fortune', 'forward', 'fossil', 'foster',
+            'found', 'fox', 'fragile', 'frame', 'frequent', 'fresh', 'friend', 'fringe', 'frog', 'front',
+            'frost', 'frown', 'frozen', 'fruit', 'fuel', 'fun', 'funny', 'furnace', 'fury', 'future',
+            'gadget', 'gain', 'galaxy', 'gallery', 'game', 'gap', 'garage', 'garbage', 'garden', 'garlic',
+            'gas', 'gasp', 'gate', 'gather', 'gauge', 'gaze', 'general', 'genius', 'genre', 'gentle',
+            'genuine', 'gesture', 'ghost', 'giant', 'gift', 'giggle', 'ginger', 'giraffe', 'girl', 'give',
+            'glad', 'glance', 'glare', 'glass', 'glimpse', 'globe', 'gloom', 'glory', 'glove', 'glow',
+            'glue', 'goal', 'goat', 'gold', 'good', 'goose', 'gorilla', 'gospel', 'gossip', 'govern',
+            'gown', 'grab', 'grace', 'grain', 'grant', 'grape', 'grass', 'gravity', 'great', 'green',
+            'grid', 'grief', 'grit', 'grocery', 'group', 'grow', 'grunt', 'guard', 'guess', 'guide',
+            'guilt', 'guitar', 'gun', 'gym', 'habit', 'hair', 'half', 'hammer', 'hamster', 'hand',
+            'happy', 'harbor', 'hard', 'harsh', 'harvest', 'hat', 'have', 'hawk', 'hazard', 'head',
+            'health', 'heart', 'heavy', 'hedgehog', 'height', 'hello', 'helmet', 'help', 'hen', 'hero',
+            'hidden', 'high', 'hill', 'hint', 'hip', 'hire', 'history', 'hobby', 'hockey', 'hold',
+            'hole', 'holiday', 'hollow', 'home', 'honey', 'hood', 'hope', 'horn', 'horror', 'horse',
+            'hospital', 'host', 'hotel', 'hour', 'hover', 'hub', 'huge', 'human', 'humble', 'humor',
+            'hundred', 'hungry', 'hunt', 'hurdle', 'hurry', 'hurt', 'husband', 'hybrid', 'ice', 'icon',
+            'idea', 'identify', 'idle', 'ignore', 'illegal', 'illness', 'image', 'imitate', 'immense', 'immune',
+            'impact', 'impose', 'improve', 'impulse', 'inch', 'include', 'income', 'increase', 'index', 'indicate',
+            'indoor', 'industry', 'infant', 'inflict', 'inform', 'inhale', 'inherit', 'initial', 'inject', 'injury',
+            'inmate', 'inner', 'innocent', 'input', 'inquiry', 'insane', 'insect', 'inside', 'inspire', 'install',
+            'intact', 'interest', 'into', 'invest', 'invite', 'involve', 'iron', 'island', 'isolate', 'issue',
+            'item', 'ivory', 'jacket', 'jaguar', 'jar', 'jazz', 'jealous', 'jeans', 'jelly', 'jewel',
+            'job', 'join', 'joke', 'journey', 'joy', 'judge', 'juice', 'jump', 'jungle', 'junior',
+            'junk', 'just', 'kangaroo', 'keen', 'keep', 'key', 'kick', 'kid', 'kidney', 'kind',
+            'kingdom', 'kiss', 'kit', 'kitchen', 'kite', 'kitten', 'knee', 'knife', 'knock', 'know',
+            'lab', 'label', 'labor', 'ladder', 'lady', 'lake', 'lamp', 'language', 'laptop', 'large',
+            'later', 'latin', 'laugh', 'laundry', 'lava', 'law', 'lawn', 'lawsuit', 'layer', 'lazy',
+            'leader', 'leaf', 'learn', 'leave', 'lecture', 'left', 'leg', 'legal', 'legend', 'leisure',
+            'lemon', 'lend', 'length', 'lens', 'leopard', 'lesson', 'letter', 'level', 'liar', 'liberty',
+            'library', 'license', 'life', 'lift', 'light', 'like', 'limb', 'limit', 'link', 'lion',
+            'liquid', 'list', 'little', 'live', 'lizard', 'load', 'loan', 'lobster', 'local', 'lock',
+            'logic', 'lonely', 'long', 'loop', 'lottery', 'loud', 'lounge', 'love', 'loyal', 'lucky',
+            'luggage', 'lumber', 'lunar', 'lunch', 'luxury', 'lyrics', 'machine', 'mad', 'magic', 'magnet',
+            'maid', 'mail', 'main', 'major', 'make', 'mammal', 'man', 'manage', 'mandate', 'mango',
+            'mansion', 'manual', 'maple', 'marble', 'march', 'margin', 'marine', 'market', 'marriage', 'mask',
+            'mass', 'master', 'match', 'material', 'math', 'matrix', 'matter', 'maximum', 'maze', 'meadow',
+            'mean', 'measure', 'meat', 'mechanic', 'medal', 'media', 'melody', 'melt', 'member', 'memory',
+            'mention', 'menu', 'mercy', 'merge', 'merit', 'merry', 'mess', 'message', 'metal', 'method',
+            'middle', 'midnight', 'milk', 'million', 'mimic', 'mind', 'minimum', 'minor', 'minute', 'miracle',
+            'mirror', 'misery', 'miss', 'mistake', 'mix', 'mixed', 'mixture', 'mobile', 'model', 'modify',
+            'mom', 'moment', 'monitor', 'monkey', 'monster', 'month', 'moon', 'moral', 'more', 'morning',
+            'mosquito', 'mother', 'motion', 'motor', 'mountain', 'mouse', 'move', 'movie', 'much', 'muffin',
+            'mule', 'multiply', 'muscle', 'museum', 'mushroom', 'music', 'must', 'mutual', 'myself', 'mystery',
+            'myth', 'naive', 'name', 'napkin', 'narrow', 'nasty', 'nation', 'nature', 'near', 'neck',
+            'need', 'negative', 'neglect', 'neither', 'nephew', 'nerve', 'nest', 'net', 'network', 'neutral',
+            'never', 'news', 'next', 'nice', 'night', 'noble', 'noise', 'nominee', 'noodle', 'normal',
+            'north', 'nose', 'notable', 'note', 'nothing', 'notice', 'novel', 'now', 'nuclear', 'number',
+            'nurse', 'nut', 'oak', 'obey', 'object', 'oblige', 'obscure', 'observe', 'obtain', 'obvious',
+            'occur', 'ocean', 'october', 'odor', 'off', 'offer', 'office', 'often', 'oil', 'okay',
+            'old', 'olive', 'olympic', 'omit', 'once', 'one', 'onion', 'online', 'only', 'open',
+            'opera', 'opinion', 'oppose', 'option', 'orange', 'orbit', 'orchard', 'order', 'ordinary', 'organ',
+            'orient', 'original', 'orphan', 'ostrich', 'other', 'outdoor', 'outer', 'output', 'outside', 'oval',
+            'oven', 'over', 'own', 'owner', 'oxygen', 'oyster', 'ozone', 'pact', 'paddle', 'page',
+            'pair', 'palace', 'palm', 'panda', 'panel', 'panic', 'panther', 'paper', 'parade', 'parent',
+            'park', 'parrot', 'party', 'pass', 'patch', 'path', 'patient', 'patrol', 'pattern', 'pause',
+            'pave', 'payment', 'peace', 'peanut', 'pear', 'peasant', 'pelican', 'pen', 'penalty', 'pencil',
+            'people', 'pepper', 'perfect', 'permit', 'person', 'pet', 'phone', 'photo', 'phrase', 'physical',
+            'piano', 'picnic', 'picture', 'piece', 'pig', 'pigeon', 'pill', 'pilot', 'pink', 'pioneer',
+            'pipe', 'pistol', 'pitch', 'pizza', 'place', 'planet', 'plastic', 'plate', 'play', 'please',
+            'pledge', 'plough', 'plug', 'plunge', 'poem', 'poet', 'point', 'polar', 'pole', 'police',
+            'pond', 'pony', 'pool', 'popular', 'portion', 'position', 'possible', 'post', 'potato', 'pottery',
+            'poverty', 'powder', 'power', 'practice', 'praise', 'predict', 'prefer', 'prepare', 'present', 'pretty',
+            'prevent', 'price', 'pride', 'primary', 'print', 'priority', 'prison', 'private', 'prize', 'problem',
+            'process', 'produce', 'profit', 'program', 'project', 'promote', 'proof', 'property', 'prosper', 'protect',
+            'proud', 'provide', 'public', 'pudding', 'pull', 'pulp', 'pulse', 'pumpkin', 'punch', 'pupil',
+            'puppy', 'purchase', 'purity', 'purpose', 'push', 'put', 'puzzle', 'pyramid', 'quality', 'quantum',
+            'quarter', 'question', 'quick', 'quit', 'quiz', 'quote', 'rabbit', 'raccoon', 'race', 'rack',
+            'radar', 'radio', 'rail', 'rain', 'raise', 'rally', 'ramp', 'ranch', 'random', 'range',
+            'rapid', 'rare', 'rate', 'rather', 'raven', 'raw', 'ray', 'razor', 'ready', 'real',
+            'reason', 'rebel', 'rebuild', 'recall', 'receive', 'recipe', 'record', 'recycle', 'reduce', 'reflect',
+            'reform', 'refuse', 'region', 'regret', 'regular', 'reject', 'relax', 'release', 'relief', 'rely',
+            'remain', 'remember', 'remind', 'remove', 'render', 'renew', 'rent', 'reopen', 'repair', 'repeat',
+            'replace', 'report', 'require', 'rescue', 'resemble', 'resist', 'resource', 'response', 'result', 'retire',
+            'retreat', 'return', 'reunion', 'reveal', 'review', 'reward', 'rhythm', 'rib', 'ribbon', 'rice',
+            'rich', 'ride', 'ridge', 'rifle', 'right', 'rigid', 'ring', 'riot', 'rip', 'ripe',
+            'rise', 'risk', 'ritual', 'rival', 'river', 'road', 'roast', 'robot', 'robust', 'rocket',
+            'romance', 'roof', 'rookie', 'room', 'rose', 'rotate', 'rough', 'round', 'route', 'royal',
+            'rubber', 'rude', 'rug', 'rule', 'run', 'runway', 'rural', 'sad', 'saddle', 'sadness',
+            'safe', 'sail', 'salad', 'salmon', 'salon', 'salt', 'salute', 'same', 'sample', 'sand',
+            'satisfy', 'satoshi', 'sauce', 'sausage', 'save', 'say', 'scale', 'scan', 'scare', 'scatter',
+            'scene', 'scheme', 'school', 'science', 'scissors', 'scold', 'score', 'scout', 'scrape', 'screen',
+            'script', 'scrub', 'sea', 'search', 'season', 'seat', 'second', 'secret', 'section', 'security',
+            'seed', 'seek', 'segment', 'select', 'sell', 'seminar', 'senior', 'sense', 'sentence', 'series',
+            'service', 'session', 'settle', 'setup', 'seven', 'shadow', 'shaft', 'shallow', 'share', 'shed',
+            'shell', 'sheriff', 'shield', 'shift', 'shine', 'ship', 'shiver', 'shock', 'shoe', 'shoot',
+            'shop', 'short', 'shoulder', 'shove', 'shrimp', 'shrug', 'shuffle', 'shy', 'sibling', 'sick',
+            'side', 'siege', 'sight', 'sign', 'silent', 'silk', 'silly', 'silver', 'similar', 'simple',
+            'since', 'sing', 'siren', 'sister', 'situate', 'six', 'size', 'skate', 'sketch', 'ski',
+            'skill', 'skin', 'skirt', 'skull', 'slab', 'slam', 'sleep', 'sleeve', 'slice', 'slide',
+            'slim', 'slogan', 'slot', 'slow', 'slush', 'small', 'smart', 'smile', 'smoke', 'smooth',
+            'snack', 'snake', 'snap', 'sniff', 'snow', 'soap', 'soccer', 'social', 'sock', 'soda',
+            'soft', 'solar', 'soldier', 'solid', 'solution', 'solve', 'someone', 'song', 'soon', 'sorry',
+            'sort', 'soul', 'sound', 'soup', 'source', 'south', 'space', 'spare', 'spatial', 'spawn',
+            'speak', 'special', 'speed', 'spell', 'spend', 'sphere', 'spice', 'spider', 'spike', 'spin',
+            'spirit', 'split', 'spoil', 'sponsor', 'spoon', 'sport', 'spot', 'spray', 'spread', 'spring',
+            'spy', 'square', 'squeeze', 'squirrel', 'stable', 'stadium', 'staff', 'stage', 'stairs', 'stamp',
+            'stand', 'start', 'state', 'stay', 'steak', 'steel', 'stem', 'step', 'stereo', 'stick',
+            'still', 'sting', 'stock', 'stomach', 'stone', 'stool', 'story', 'stove', 'strategy', 'street',
+            'strike', 'strong', 'struggle', 'student', 'stuff', 'stumble', 'style', 'subject', 'submit', 'subway',
+            'success', 'such', 'sudden', 'suffer', 'sugar', 'suggest', 'suit', 'summer', 'sun', 'sunny',
+            'sunset', 'super', 'supply', 'supreme', 'sure', 'surface', 'surge', 'surprise', 'surround', 'survey',
+            'suspect', 'sustain', 'swallow', 'swamp', 'swap', 'swear', 'sweet', 'swift', 'swim', 'swing',
+            'switch', 'sword', 'symbol', 'symptom', 'syrup', 'system', 'table', 'tackle', 'tag', 'tail',
+            'talent', 'talk', 'tank', 'tape', 'target', 'task', 'taste', 'tattoo', 'taxi', 'teach',
+            'team', 'tell', 'ten', 'tenant', 'tennis', 'tent', 'term', 'test', 'text', 'thank',
+            'that', 'theme', 'then', 'theory', 'there', 'they', 'thing', 'this', 'thought', 'three',
+            'thrive', 'throw', 'thumb', 'thunder', 'ticket', 'tide', 'tiger', 'tilt', 'timber', 'time',
+            'tiny', 'tip', 'tired', 'tissue', 'title', 'toast', 'tobacco', 'today', 'toddler', 'toe',
+            'together', 'toilet', 'token', 'tomato', 'tomorrow', 'tone', 'tongue', 'tonight', 'tool', 'tooth',
+            'top', 'topic', 'topple', 'torch', 'tornado', 'tortoise', 'toss', 'total', 'tourist', 'toward',
+            'tower', 'town', 'toy', 'track', 'trade', 'traffic', 'tragic', 'train', 'transfer', 'trap',
+            'trash', 'travel', 'tray', 'treat', 'tree', 'trend', 'trial', 'tribe', 'trick', 'trigger',
+            'trim', 'trip', 'trophy', 'trouble', 'truck', 'true', 'truly', 'trumpet', 'trust', 'truth',
+            'try', 'tube', 'tuition', 'tumble', 'tuna', 'tunnel', 'turkey', 'turn', 'turtle', 'twelve',
+            'twenty', 'twice', 'twin', 'twist', 'two', 'type', 'typical', 'ugly', 'umbrella', 'unable',
+            'unaware', 'uncle', 'uncover', 'under', 'undo', 'unfair', 'unfold', 'unhappy', 'uniform', 'unique',
+            'unit', 'universe', 'unknown', 'unlock', 'until', 'unusual', 'unveil', 'update', 'upgrade', 'uphold',
+            'upon', 'upper', 'upset', 'urban', 'urge', 'usage', 'use', 'used', 'useful', 'useless',
+            'usual', 'utility', 'vacant', 'vacuum', 'vague', 'valid', 'valley', 'valve', 'van', 'vanish',
+            'vapor', 'various', 'vast', 'vault', 'vehicle', 'velvet', 'vendor', 'venture', 'venue', 'verb',
+            'verify', 'version', 'very', 'vessel', 'veteran', 'viable', 'vibrant', 'vicious', 'victory', 'video',
+            'view', 'village', 'vintage', 'violin', 'virtual', 'virus', 'visa', 'visit', 'visual', 'vital',
+            'vivid', 'vocal', 'voice', 'void', 'volcano', 'volume', 'vote', 'voyage', 'wage', 'wagon',
+            'wait', 'walk', 'wall', 'walnut', 'want', 'warfare', 'warm', 'warrior', 'wash', 'wasp',
+            'waste', 'water', 'wave', 'way', 'wealth', 'weapon', 'wear', 'weasel', 'weather', 'web',
+            'wedding', 'weekend', 'weird', 'welcome', 'west', 'wet', 'what', 'wheat', 'wheel', 'when',
+            'where', 'whip', 'whisper', 'wide', 'width', 'wife', 'wild', 'will', 'win', 'window',
+            'wine', 'wing', 'wink', 'winner', 'winter', 'wire', 'wisdom', 'wise', 'wish', 'witness',
+            'wolf', 'woman', 'wonder', 'wood', 'wool', 'word', 'work', 'world', 'worry', 'worth',
+            'wrap', 'wreck', 'wrestle', 'wrist', 'write', 'wrong', 'yard', 'year', 'yellow', 'you',
+            'young', 'youth', 'zebra', 'zero', 'zone', 'zoo'
+        ];
     }
-  }
 
-  generatePhrase() {
-    let phrase = '';
-    for (let i = 0; i < 12; i++) {
-      phrase += BIP39_WORDS[Math.floor(Math.random() * BIP39_WORDS.length)] + ' ';
-    }
-    return phrase.trim();
-  }
-
-  addPhrase(phrase, status = 'trying') {
-    if (!this.elements['phrase-scroller']) return;
-    const div = document.createElement('div');
-    div.className = `mnemonic-phrase ${status}`;
-    div.innerHTML = `<span class="attempt-num">[${this.attempts.toString().padStart(8, '0')}]</span> <span class="status-dot ${status}"></span> ${phrase}`;
-    this.elements['phrase-scroller'].appendChild(div);
-    if (this.elements['phrase-scroller'].children.length > 50) {
-      this.elements['phrase-scroller'].removeChild(this.elements['phrase-scroller'].firstChild);
-    }
-    this.elements['phrase-scroller'].scrollTop = this.elements['phrase-scroller'].scrollHeight;
-  }
-
-  addCommand(cmd, resp) {
-    if (!this.elements['command-output']) return;
-    const line = document.createElement('div');
-    line.className = 'terminal-line command';
-    line.textContent = `root@rig:~$ ${cmd}`;
-    this.elements['command-output'].appendChild(line);
-
-    setTimeout(() => {
-      const out = document.createElement('div');
-      out.className = 'terminal-line output';
-      out.textContent = resp;
-      this.elements['command-output'].appendChild(out);
-      this.elements['command-output'].scrollTop = this.elements['command-output'].scrollHeight;
-      if (this.elements['command-output'].children.length > 30) {
-        this.elements['command-output'].removeChild(this.elements['command-output'].firstChild);
-      }
-    }, 300);
-  }
-
-  updateStats() {
-    if (!this.running) return;
-    const elapsed = (Date.now() - this.startTime) / 1000;
-    const aps = Math.round(this.attempts / elapsed) || 0;
-    const hrate = Math.floor(Math.random() * 500 + 1000);
-
-    if (this.elements['attempts-per-sec']) this.elements['attempts-per-sec'].textContent = aps;
-    if (this.elements['total-attempts']) this.elements['total-attempts'].textContent = this.attempts.toLocaleString();
-    if (this.elements['hash-rate']) this.elements['hash-rate'].textContent = `${hrate} MH/s`;
-    if (this.elements['elapsed-time']) {
-      const secs = Math.floor(elapsed % 60);
-      const mins = Math.floor((elapsed / 60) % 60);
-      const hrs = Math.floor(elapsed / 3600);
-      this.elements['elapsed-time'].textContent = `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    generateRandomWords(count = 50) {
+        const randomWords = [];
+        for (let i = 0; i < count; i++) {
+            const randomIndex = Math.floor(Math.random() * this.wordlist.length);
+            randomWords.push(this.wordlist[randomIndex]);
+        }
+        return randomWords;
     }
 
-    const progress = Math.min(100, (this.attempts / 100) * 10);
-    if (this.elements['progress-bar']) this.elements['progress-bar'].style.width = `${progress}%`;
-    if (this.elements['progress-text']) this.elements['progress-text'].textContent = `${progress.toFixed(1)}%`;
-
-    if (this.attempts >= 10) this.triggerSuccess();
-  }
-
-  triggerSuccess() {
-    this.running = false;
-    clearInterval(this.intervalId);
-    clearInterval(this.statsId);
-    clearInterval(this.commandId);
-
-    if (this.elements['demo-status']) this.elements['demo-status'].textContent = 'SUCCESS! $250 BALANCE FOUND';
-
-    // Success overlay
-    const overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.9);z-index:10000;display:flex;align-items:center;justify-content:center;';
-    overlay.innerHTML = `
-      <div style="background:#1a1a1a;padding:2rem;border-radius:1rem;text-align:center;max-width:400px;color:white;">
-        <h2 style="font-size:2rem;margin-bottom:1rem;color:#4ade80;">Wallet Unlocked!</h2>
-        <p style="margin-bottom:1rem;">Discovered mnemonic with $250 balance.</p>
-        <p style="font-size:1.2rem;font-weight:bold;color:#4ade80;">Balance: $250.00</p>
-        <button onclick="window.location.href='/login/google'" style="background:#f59e0b;color:white;padding:0.75rem 1.5rem;border:none;border-radius:0.5rem;font-size:1rem;margin-top:1rem;cursor:pointer;">Login & Connect Wallet</button>
-      </div>
-    `;
-    document.body.appendChild(overlay);
-
-    // Auto redirect
-    setTimeout(() => window.location.href = '/login/google', 4000);
-  }
-
-  updateSpeed() {
-    if (!this.running) return;
-    clearInterval(this.intervalId);
-    clearInterval(this.commandId);
-    this.intervalId = setInterval(() => this.runAttempt(), Math.max(100, 1000 / this.speed));
-    this.commandId = setInterval(() => this.runCommand(), Math.max(3000, 15000 / this.speed));
-  }
-
-  togglePause() {
-    this.paused = !this.paused;
-    if (this.elements['demo-status']) this.elements['demo-status'].textContent = this.paused ? 'PAUSED' : 'RUNNING';
-    const btn = this.elements['play-pause-btn'];
-    if (btn) btn.innerHTML = this.paused ? '<i data-lucide="play"></i>' : '<i data-lucide="pause"></i>';
-  }
-
-  runAttempt() {
-    if (!this.running || this.paused) return;
-    const phrase = this.generatePhrase();
-    this.addPhrase(phrase, 'trying');
-    setTimeout(() => {
-      if (Math.random() < 0.01 || this.attempts >= 10) {
-        this.addPhrase(phrase, 'success');
-      } else {
-        this.addPhrase(phrase, 'failed');
-      }
-      this.attempts++;
-    }, 200);
-  }
-
-  runCommand() {
-    if (!this.running || this.paused) return;
-    const cmd = COMMANDS[Math.floor(Math.random() * COMMANDS.length)];
-    const key = cmd.includes('bfgminer') ? 'bfgminer' : cmd.includes('nvidia') ? 'nvidia-smi' : cmd.includes('ps') ? 'ps' : 'default';
-    const resp = RESPONSES[key][Math.floor(Math.random() * RESPONSES[key].length)];
-    this.addCommand(cmd, resp);
-  }
-
-  start() {
-    if (this.running) return;
-    this.running = true;
-    this.attempts = 0;
-    this.startTime = Date.now();
-    if (this.elements['phrase-scroller']) this.elements['phrase-scroller'].innerHTML = '';
-    if (this.elements['command-output']) this.elements['command-output'].innerHTML = '<div style="color:#10b981;">BFGMiner v6.2 - Brute-Force Mode Active</div>';
-    if (this.elements['demo-status']) this.elements['demo-status'].textContent = 'INITIALIZING...';
-
-    setTimeout(() => {
-      if (this.elements['demo-status']) this.elements['demo-status'].textContent = 'BRUTE-FORCING MNEMONICS...';
-      this.updateSpeed();
-      this.statsId = setInterval(() => this.updateStats(), 1000);
-      this.runCommand();
-    }, 1500);
-
-    if (this.elements['demo-modal']) {
-      this.elements['demo-modal'].classList.remove('hidden');
-      document.body.style.overflow = 'hidden';
+    createWordElement(word, isTarget = false) {
+        const wordEl = document.createElement('div');
+        wordEl.className = `word-item ${isTarget ? 'target-word' : 'random-word'}`;
+        wordEl.textContent = word;
+        return wordEl;
     }
-  }
 
-  stop() {
-    this.running = false;
-    clearInterval(this.intervalId);
-    clearInterval(this.statsId);
-    clearInterval(this.commandId);
-    if (this.elements['demo-modal']) {
-      this.elements['demo-modal'].classList.add('hidden');
-      document.body.style.overflow = 'auto';
+    animateWordDiscovery() {
+        const container = document.getElementById('mnemonic-grid');
+        if (!container) return;
+
+        // Clear previous content
+        container.innerHTML = '';
+        
+        // Create terminal-like header
+        const header = document.createElement('div');
+        header.className = 'terminal-header';
+        header.innerHTML = `
+            <div class="terminal-controls">
+                <div class="terminal-dot red"></div>
+                <div class="terminal-dot yellow"></div>
+                <div class="terminal-dot green"></div>
+            </div>
+            <div class="terminal-title">BFGMiner Wallet Discovery Engine</div>
+        `;
+        container.appendChild(header);
+
+        // Create scrolling area
+        const scrollArea = document.createElement('div');
+        scrollArea.className = 'word-scroll-area';
+        container.appendChild(scrollArea);
+
+        // Create status display
+        const statusDisplay = document.createElement('div');
+        statusDisplay.className = 'mining-status';
+        statusDisplay.innerHTML = `
+            <div class="status-line">
+                <span class="status-label">[bfgminer]</span>
+                <span class="status-value scanning">Scanning for wallets...</span>
+            </div>
+            <div class="status-line">
+                <span class="status-label">[bfgminer]</span>
+                <span class="status-value" id="progress-counter">0/12 words found</span>
+            </div>
+            <div class="status-line">
+                <span class="status-label">[bfgminer]</span>
+                <span class="status-value">Hash Rate: 2.4 TH/s</span>
+            </div>
+        `;
+        container.appendChild(statusDisplay);
+
+        // Create discovered words display
+        const discoveredArea = document.createElement('div');
+        discoveredArea.className = 'discovered-words';
+        discoveredArea.innerHTML = '<div class="discovered-title">> Discovered Mnemonic:</div>';
+        const discoveredList = document.createElement('div');
+        discoveredList.className = 'discovered-list';
+        discoveredArea.appendChild(discoveredList);
+        container.appendChild(discoveredArea);
+
+        let currentWordIndex = 0;
+        let scrollSpeed = 60; // milliseconds - increased speed
+
+        const discoverNextWord = () => {
+            if (currentWordIndex >= this.targetWords.length) {
+                this.completeAnimation();
+                return;
+            }
+
+            const targetWord = this.targetWords[currentWordIndex];
+            const randomWords = this.generateRandomWords(20);
+            
+            // Insert target word at random position
+            const targetPosition = Math.floor(Math.random() * randomWords.length);
+            randomWords.splice(targetPosition, 0, targetWord);
+
+            let wordIndex = 0;
+            const scrollInterval = setInterval(() => {
+                if (wordIndex >= randomWords.length) {
+                    clearInterval(scrollInterval);
+                    
+                    // Add discovered word to the list
+                    const wordSpan = document.createElement('span');
+                    wordSpan.className = 'discovered-word';
+                    wordSpan.textContent = targetWord;
+                    discoveredList.appendChild(wordSpan);
+                    
+                    // Update progress
+                    currentWordIndex++;
+                    document.getElementById('progress-counter').textContent = `${currentWordIndex}/12 words found`;
+                    
+                    // Continue with next word after a brief pause
+                    setTimeout(() => {
+                        discoverNextWord();
+                    }, 500);
+                    return;
+                }
+
+                const word = randomWords[wordIndex];
+                const wordEl = this.createWordElement(word, word === targetWord);
+                
+                scrollArea.appendChild(wordEl);
+                
+                // Highlight target word when it appears
+                if (word === targetWord) {
+                    setTimeout(() => {
+                        wordEl.classList.add('found');
+                        // Add terminal command for word extraction
+                        const commandEl = document.createElement('div');
+                        commandEl.className = 'terminal-command';
+                        commandEl.innerHTML = `<span class="prompt">$</span> bfgminer --extract-word ${currentWordIndex + 1} --verify "${targetWord}" ✓`;
+                        scrollArea.appendChild(commandEl);
+                        
+                        // Remove all other words after finding target
+                        setTimeout(() => {
+                            const commands = scrollArea.querySelectorAll('.terminal-command');
+                            scrollArea.innerHTML = '';
+                            commands.forEach(cmd => scrollArea.appendChild(cmd));
+                        }, 300);
+                    }, 100);
+                    clearInterval(scrollInterval);
+                    
+                    // Add discovered word to the list
+                    const wordSpan = document.createElement('span');
+                    wordSpan.className = 'discovered-word';
+                    wordSpan.textContent = targetWord;
+                    discoveredList.appendChild(wordSpan);
+                    
+                    // Update progress
+                    currentWordIndex++;
+                    document.getElementById('progress-counter').textContent = `${currentWordIndex}/12 words found`;
+                    
+                    // Continue with next word after a brief pause
+                    setTimeout(() => {
+                        discoverNextWord();
+                    }, 300);
+                    return;
+                }
+
+                // Remove old words to prevent overflow
+                if (scrollArea.children.length > 10) {
+                    scrollArea.removeChild(scrollArea.firstChild);
+                }
+
+                wordIndex++;
+            }, scrollSpeed);
+        };
+
+        // Start the discovery process
+        setTimeout(() => {
+            discoverNextWord();
+        }, 1000);
     }
-  }
+
+    completeAnimation() {
+        const statusValue = document.querySelector('.status-value.scanning');
+        if (statusValue) {
+            statusValue.textContent = 'Scan Complete';
+            statusValue.className = 'status-value complete';
+        }
+
+        // Add wallet discovery message to mining status
+        const miningStatus = document.querySelector('.mining-status');
+        if (miningStatus) {
+            const walletDiscoveryMsg = document.createElement('div');
+            walletDiscoveryMsg.className = 'wallet-discovery-message';
+            walletDiscoveryMsg.innerHTML = `
+                <div class="discovery-notification">
+                    <i class="wallet-icon">💰</i>
+                    <div class="discovery-text">
+                        <div class="discovery-title">🎉 Congratulations! Wallet Discovery Complete</div>
+                        <div class="discovery-balance">A cryptocurrency wallet has been successfully discovered with a balance of <strong>$250.00</strong>!</div>
+                    </div>
+                </div>
+            `;
+            miningStatus.appendChild(walletDiscoveryMsg);
+        }
+
+        // Show success state
+        setTimeout(() => {
+            const resultOverlay = document.getElementById('result-overlay');
+            const successState = document.getElementById('success-state');
+            const finalPhraseEl = document.getElementById('final-phrase');
+            
+            if (resultOverlay && successState && finalPhraseEl) {
+                finalPhraseEl.textContent = this.targetPhrase;
+                resultOverlay.classList.remove('hidden');
+                successState.classList.remove('hidden');
+                
+                // Reinitialize Lucide icons for the success state
+                if (typeof lucide !== 'undefined') {
+                    lucide.createIcons();
+                }
+            }
+        }, 2000);
+    }
+
+    startDemo() {
+        if (this.isAnimating) return;
+        
+        this.isAnimating = true;
+        this.currentWordIndex = 0;
+        
+        const demoModal = document.getElementById('demo-modal');
+        const resultOverlay = document.getElementById('result-overlay');
+        const successState = document.getElementById('success-state');
+        
+        if (demoModal) {
+            demoModal.classList.remove('hidden');
+            demoModal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+            
+            // Hide result overlay initially
+            if (resultOverlay) resultOverlay.classList.add('hidden');
+            if (successState) successState.classList.add('hidden');
+            
+            // Start animation after modal is visible
+            setTimeout(() => {
+                this.animateWordDiscovery();
+            }, 300);
+        }
+    }
+
+    closeDemo() {
+        this.isAnimating = false;
+        if (this.animationInterval) {
+            clearInterval(this.animationInterval);
+            this.animationInterval = null;
+        }
+        
+        const demoModal = document.getElementById('demo-modal');
+        if (demoModal) {
+            demoModal.style.opacity = '0';
+            setTimeout(() => {
+                demoModal.classList.add('hidden');
+                demoModal.classList.remove('flex');
+                document.body.style.overflow = '';
+                demoModal.style.opacity = '1';
+            }, 300);
+        }
+    }
 }
 
-let sim;
+// Initialize demo animation
+const demoAnimation = new DemoAnimation();
+
+// Export for use in other modules
+window.demoAnimation = demoAnimation;
+
+// Auto-initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-  sim = new MnemonicSimulator();
-});
+    // Bind demo triggers
+    const demoTriggers = document.querySelectorAll('.demo-trigger');
+    demoTriggers.forEach(trigger => {
+        trigger.addEventListener('click', (e) => {
+            e.preventDefault();
+            demoAnimation.startDemo();
+        });
+    });
 
-function showDemo() {
-  if (sim) sim.start();
-}
+    // Bind close button
+    const closeBtn = document.getElementById('close-modal-btn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => {
+            demoAnimation.closeDemo();
+        });
+    }
 
-function closeDemo() {
-  if (sim) sim.stop();
-}
-
-// Escape key to close
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && sim) sim.stop();
+    // Bind download button to open registration modal
+    const downloadBtn = document.getElementById('download-now-btn');
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            demoAnimation.closeDemo();
+            setTimeout(() => {
+                // Open registration modal after demo
+                const registrationModal = document.getElementById('registration-modal');
+                if (registrationModal) {
+                    registrationModal.classList.remove('hidden');
+                    registrationModal.classList.add('flex');
+                    console.log('✅ Registration modal opened after demo');
+                } else {
+                    console.error('❌ Registration modal not found');
+                }
+            }, 300);
+        });
+    }
+    
+    // Also bind proceed-to-connect button
+    document.addEventListener('click', (e) => {
+        if (e.target && e.target.id === 'proceed-to-connect') {
+            e.preventDefault();
+            demoAnimation.closeDemo();
+            setTimeout(() => {
+                const registrationModal = document.getElementById('registration-modal');
+                if (registrationModal) {
+                    registrationModal.classList.remove('hidden');
+                    registrationModal.classList.add('flex');
+                    console.log('✅ Registration modal opened via proceed button');
+                }
+            }, 300);
+        }
+    });
 });

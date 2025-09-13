@@ -1,7 +1,7 @@
 // Download Handler Module for BFGMiner App
 const fs = require('fs');
 const path = require('path');
-const crypto = require('crypto');
+
 
 class DownloadHandler {
     constructor(database) {
@@ -326,9 +326,9 @@ class DownloadHandler {
             .replace(/^### (.*$)/gim, '<h3>$1</h3>')
             .replace(/^\*\*(.*)\*\*/gim, '<strong>$1</strong>')
             .replace(/^\*(.*)\*/gim, '<em>$1</em>')
-            .replace(/^\`(.*)\`/gim, '<code>$1</code>')
+            .replace(/^`(.*)`/gim, '<code>$1</code>')
             .replace(/^```([\s\S]*?)```/gim, '<pre><code>$1</code></pre>')
-            .replace(/^\- (.*$)/gim, '<li>$1</li>')
+            .replace(/^- (.*$)/gim, '<li>$1</li>')
             .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
             .replace(/\n/gim, '<br>');
     }
