@@ -1,9 +1,8 @@
 import sqlite3
 from contextlib import contextmanager
 
-from flask import jsonify, session
-
 from config import AppConfig
+from flask import jsonify, session
 
 config = AppConfig()
 

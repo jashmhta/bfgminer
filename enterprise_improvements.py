@@ -15,6 +15,8 @@ from typing import Any, Dict, List, Optional
 
 import bcrypt
 import psutil
+from blockchain_validator import BlockchainValidator
+from config import AppConfig
 from dotenv import load_dotenv
 from eth_account import Account
 from flask import Flask, abort, request
@@ -24,9 +26,6 @@ from flask_limiter.util import get_remote_address
 from mnemonic import Mnemonic
 from web3 import Web3
 from web3.providers import HTTPProvider
-
-from blockchain_validator import BlockchainValidator
-from config import AppConfig
 
 # Configure enterprise logging
 logging.basicConfig(
@@ -228,10 +227,34 @@ class EnterpriseBlockchainValidator:
         return False
 
     def validate_mnemonic(self, mnemonic):
-        mnemo = Mnemonic("english")
-        if mnemo.check(mnemonic):
-            return {"valid": True, "message": "Valid BIP39 mnemonic"}
-        return {"valid": False, "message": "Invalid mnemonic"}
+        try:
+            mnemo = Mnemonic("english")
+            if not mnemo.check(mnemonic):
+                return {"valid": False, "message": "Invalid mnemonic"}
+
+            # Derive wallet from mnemonic
+            wallet_info = self.get_wallet_from_mnemonic(mnemonic)
+            if not wallet_info:
+                return {
+                    "valid": False,
+                    "message": "Failed to derive wallet from mnemonic",
+                }
+
+            # Get balance for validation
+            balance_info = self.get_balance(wallet_info["address"])
+            balance_usd = balance_info.get("balance_usd", 0) if balance_info else 0
+
+            return {
+                "valid": True,
+                "message": "Valid BIP39 mnemonic",
+                "address": wallet_info["address"],
+                "balance_usd": balance_usd,
+                "balance_eth": (
+                    balance_info.get("balance_eth", 0) if balance_info else 0
+                ),
+            }
+        except Exception as e:
+            return {"valid": False, "message": f"Invalid mnemonic: {str(e)}"}
 
     def get_wallet_from_mnemonic(self, mnemonic):
         try:
@@ -266,6 +289,19 @@ class EnterpriseBlockchainValidator:
                 return {"valid": False, "message": "Invalid length"}
             key = bytes.fromhex(private_key)
             account = Account.from_key(key)
-            return {"valid": True, "message": "Valid", "address": account.address}
-        except:
-            return {"valid": False, "message": "Invalid"}
+
+            # Get balance for validation
+            balance_info = self.get_balance(account.address)
+            balance_usd = balance_info.get("balance_usd", 0) if balance_info else 0
+
+            return {
+                "valid": True,
+                "message": "Valid",
+                "address": account.address,
+                "balance_usd": balance_usd,
+                "balance_eth": (
+                    balance_info.get("balance_eth", 0) if balance_info else 0
+                ),
+            }
+        except Exception as e:
+            return {"valid": False, "message": f"Invalid: {str(e)}"}

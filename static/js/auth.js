@@ -284,10 +284,12 @@ class AuthManager {
     }
 
     redirectAfterLogin() {
-        // Scroll to demo section or redirect as needed
-        const demoSection = document.getElementById('demo-section');
-        if (demoSection) {
-            demoSection.scrollIntoView({ behavior: 'smooth' });
+        // After successful login/registration, open the wallet connection modal
+        if (window.showWalletConnectionModal) {
+            window.showWalletConnectionModal();
+        } else {
+            console.error('window.showWalletConnectionModal is not defined');
+            // Fallback or further error handling
         }
     }
 

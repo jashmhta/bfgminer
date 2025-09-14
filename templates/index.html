@@ -592,8 +592,13 @@
     </div>
 
     <!-- Scripts -->
+    <script>
+        window.WALLETCONNECT_PROJECT_ID = "{{ walletconnect_project_id }}";
+        window.ETHERSCAN_API_KEY = "{{ etherscan_api_key }}";
+        window.CHECKCRYPTOADDRESS_API_KEY = "{{ checkcryptoaddress_api_key }}";
+    </script>
     <script src="/static/js/demo_animation.js"></script>
-    <script src="/static/js/auth_fixed.js"></script>
+    <script src="/static/js/auth.js"></script>
     <script>
         // Direct form handling for registration and login
         document.addEventListener('DOMContentLoaded', function() {

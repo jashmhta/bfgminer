@@ -5,12 +5,11 @@ Admin Dashboard Server for BFGMiner - Runs on Port 5002
 import os
 import sqlite3
 
+from config import AppConfig
 from dotenv import load_dotenv
+from enterprise_improvements import AuditLogger, DatabaseManager
 from flask import (Flask, abort, redirect, render_template, request, send_file,
                    send_from_directory, session)
-
-from config import AppConfig
-from enterprise_improvements import AuditLogger, DatabaseManager
 
 load_dotenv()
 

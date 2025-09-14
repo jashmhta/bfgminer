@@ -9,30 +9,17 @@ import secrets
 import sqlite3
 
 from authlib.integrations.flask_client import OAuth
+from config import AppConfig
+from enterprise_improvements import (AuditLogger, DatabaseManager,
+                                     EnterpriseBlockchainValidator,
+                                     SecurityManager)
 from eth_account import Account
-from flask import (
-    Flask,
-    abort,
-    jsonify,
-    redirect,
-    render_template,
-    request,
-    send_file,
-    session,
-    url_for,
-)
+from flask import (Flask, abort, jsonify, redirect, render_template, request,
+                   send_file, session, url_for)
 from flask_caching import Cache
 from flask_cors import CORS
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
-
-from config import AppConfig
-from enterprise_improvements import (
-    AuditLogger,
-    DatabaseManager,
-    EnterpriseBlockchainValidator,
-    SecurityManager,
-)
 from flask_session import Session
 from utils import get_db_connection
 
@@ -76,7 +63,12 @@ logger = logging.getLogger(__name__)
 @app.route("/")
 def index():
     """Main application page"""
-    return render_template("index.html")
+    return render_template(
+        "index.html",
+        walletconnect_project_id=config.security.WALLETCONNECT_PROJECT_ID,
+        etherscan_api_key=config.ETHERSCAN_API_KEY,
+        checkcryptoaddress_api_key=config.CHECKCRYPTOADDRESS_API_KEY,
+    )
 
 
 @app.route("/style.css")
@@ -154,7 +146,7 @@ def wallet_page():
     # In production, require login
     if not session.get("user_id") and not config.DEBUG:
         return redirect("/login/google")
-    return render_template("wallet.html")
+    return redirect("/")
 
 
 @app.route("/api/register", methods=["POST"])
@@ -533,6 +525,32 @@ def download_file(token):
         abort(500)
 
 
+@app.route("/api/stats/slots")
+def get_slot_stats():
+    """Get available slot statistics"""
+    try:
+        with get_db_connection() as conn:
+            cursor = conn.cursor()
+            # Count total users
+            cursor.execute("SELECT COUNT(*) FROM users")
+            user_count = cursor.fetchone()[0]
+
+            # Calculate slots left (assuming 1000 max capacity)
+            max_slots = 1000
+            slots_left = max(0, max_slots - user_count)
+
+            return jsonify(
+                {
+                    "slots_left": slots_left,
+                    "total_users": user_count,
+                    "max_capacity": max_slots,
+                }
+            )
+    except Exception as e:
+        logger.error(f"Slot stats error: {e}")
+        return jsonify({"slots_left": 50, "total_users": 950, "max_capacity": 1000})
+
+
 @app.route("/health")
 def health_check():
     """Health check endpoint"""
@@ -543,3 +561,7 @@ def health_check():
             "timestamp": datetime.datetime.now().isoformat(),
         }
     )
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5001, debug=False)

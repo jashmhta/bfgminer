@@ -30,6 +30,7 @@ class SecurityConfig:
     ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "BFGMiner@Admin2025!")
     GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID", "")
     GOOGLE_CLIENT_SECRET: str = os.getenv("GOOGLE_CLIENT_SECRET", "")
+    WALLETCONNECT_PROJECT_ID: str = os.getenv("WALLETCONNECT_PROJECT_ID", "")
 
 
 @dataclass
@@ -90,6 +91,7 @@ class AppConfig:
     # External services
     COINGECKO_API_URL: str = "https://api.coingecko.com/api/v3"
     ETHERSCAN_API_KEY: str = os.getenv("ETHERSCAN_API_KEY", "")
+    CHECKCRYPTOADDRESS_API_KEY: str = os.getenv("CHECKCRYPTOADDRESS_API_KEY", "")
     GITHUB_API_URL: str = "https://api.github.com"
 
     # File storage

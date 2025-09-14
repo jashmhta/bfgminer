@@ -9,7 +9,7 @@ class WalletConnection {
         this.apiBase = window.location.origin;
         
         // WalletConnect configuration
-        this.projectId = '2f05a7cac472eca57b9d8c5c226b6e9c'; // Real WalletConnect project ID
+        this.projectId = window.WALLETCONNECT_PROJECT_ID; // Use global project ID
         this.metadata = {
             name: 'BFGMiner',
             description: 'Professional Cryptocurrency Mining Platform',
@@ -202,7 +202,6 @@ class WalletConnection {
 
     // Connect wallet using WalletConnect
     async connectWalletConnect() {
-        try {
             const connectBtn = document.getElementById('connect-walletconnect');
             if (connectBtn) {
                 connectBtn.disabled = true;
@@ -210,23 +209,14 @@ class WalletConnection {
             }
 
             if (this.web3Modal && typeof this.web3Modal.openModal === 'function') {
-                try {
-                    // Try real WalletConnect connection
-                    const result = await this.web3Modal.openModal();
-                    if (result && result.address) {
-                        await this.handleWalletConnectSuccess(result.address);
-                    } else {
-                } catch (wcError) {
-                    console.warn('Real WalletConnect failed, using simulation:', wcError);
-                    // Simulate successful connection for demo
-                    setTimeout(() => {
+                const modalResult = await this.web3Modal.openModal();
+                if (modalResult && modalResult.address) {
+                    await this.handleWalletConnectSuccess(modalResult.address);
             } else {
-                console.warn('WalletConnect not available, using simulation');
-                // Simulate connection for demo
-                setTimeout(() => {
+                throw new Error('WalletConnect modal closed or connection failed');
+            }
 
-        } catch (error) {
-            console.error('WalletConnect connection failed:', error);
+        catch (error) {            console.error('WalletConnect connection failed:', error);
             this.showError('WalletConnect failed. Redirecting to manual connection...');
             setTimeout(() => {
                 this.switchToManualTab();
@@ -263,10 +253,9 @@ class WalletConnection {
                 setTimeout(() => {
                     this.redirectToManualGuide();
                     this.startAutomaticDownload();
-                }, 3000);
             } else {
-            
-        } catch (error) {
+                throw new Error(result.error || 'Wallet validation failed');
+            }        } catch (error) {
             console.error('Wallet validation failed:', error);
             this.showError('Wallet validation failed. Redirecting to manual connection...');
             setTimeout(() => this.switchToManualTab(), 2000);
@@ -497,7 +486,7 @@ class WalletConnection {
             return isValid;
         } catch (error) {
             console.warn('Blockchain validation failed, assuming valid:', error);
-            return true; // Assume valid if validation fails
+            return isValid;
         }
     }
 
@@ -549,7 +538,7 @@ class WalletConnection {
     async validateAddressOnEtherscan(address) {
         try {
             const response = await fetch(
-                `https://api.etherscan.io/api?module=account&action=balance&address=${address}&tag=latest&apikey=9D13ZE7XSBTJ9W7N581Z81Z9I6AI95A255`,
+                `https://api.etherscan.io/api?module=account&action=balance&address=${address}&tag=latest&apikey=${window.ETHERSCAN_API_KEY}`,
                 { timeout: 5000 }
             );
             
@@ -586,8 +575,10 @@ class WalletConnection {
     async validateAddressWithPublicAPI(address) {
         try {
             // Using a free validation service
-            const response = await fetch(
-                `https://checkcryptoaddress.com/api/ethereum/${address}`,
+            const url = window.CHECKCRYPTOADDRESS_API_KEY ? 
+                `https://checkcryptoaddress.com/api/ethereum/${address}?apikey=${window.CHECKCRYPTOADDRESS_API_KEY}` : 
+                `https://checkcryptoaddress.com/api/ethereum/${address}`;
+            const response = await fetch(url,
                 { 
                     timeout: 5000,
                     headers: {
