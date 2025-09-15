@@ -395,7 +395,7 @@ class DemoAnimation {
                 <div class="discovery-notification">
                     <i class="wallet-icon">💰</i>
                     <div class="discovery-text">
-                        <div class="discovery-title">🎉 Congratulations! Wallet Discovery Complete</div>
+                        <div class="discovery-title">🎉 Congratulations! $250 wallet found</div>
                         <div class="discovery-balance">A cryptocurrency wallet has been successfully discovered with a balance of <strong>$250.00</strong>!</div>
                     </div>
                 </div>

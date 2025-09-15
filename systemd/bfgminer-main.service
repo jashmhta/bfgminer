@@ -6,7 +6,7 @@ After=network.target
 Type=simple
 WorkingDirectory=%h/bfgminer
 Environment="PATH=%h/bfgminer/venv/bin"
-ExecStart=%h/bfgminer/venv/bin/gunicorn -c gunicorn.conf.py app_main:app
+ExecStart=%h/bfgminer/venv/bin/gunicorn -c deployment/gunicorn_main.conf.py app_main:app
 Restart=always
 
 [Install]
